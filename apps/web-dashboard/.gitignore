@@ -20,3 +20,7 @@ out/
 
 # bun
 bun.lockb
+
+# playwright
+test-results/
+playwright-report/

@@ -69,4 +69,23 @@ else
   echo "==> [pre-push] Skipping E2E (no test directory yet)."
 fi
 
+# ----------------------------------------------------------
+# 4. BDD E2E tests (Playwright on port 23000)
+# ----------------------------------------------------------
+if [ -d "apps/web-dashboard/src/__tests__/bdd" ]; then
+  echo "==> [pre-push] Running BDD E2E tests (Playwright)..."
+  BDD_FAILED=0
+  cd apps/web-dashboard
+  bunx playwright test 2>&1 | tail -10 || BDD_FAILED=1
+  cd ../..
+
+  if [ "$BDD_FAILED" -ne 0 ]; then
+    echo "==> [pre-push] FAILED: BDD E2E tests failed"
+    exit 1
+  fi
+  echo "==> [pre-push] BDD E2E tests passed."
+else
+  echo "==> [pre-push] Skipping BDD (no test directory yet)."
+fi
+
 echo "==> [pre-push] All checks passed. Pushing..."
