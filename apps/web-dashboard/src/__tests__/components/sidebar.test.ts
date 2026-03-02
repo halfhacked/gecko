@@ -20,11 +20,12 @@ describe("sidebar navigation", () => {
       ]);
     });
 
-    it("group 1 is Settings with General, AI Settings, Categories, Tags, Apps", () => {
+    it("group 1 is Settings with General, AI Settings, Backup, Categories, Tags, Apps", () => {
       expect(navGroups[1]!.label).toBe("Settings");
       expect(navGroups[1]!.items.map((i) => i.label)).toEqual([
         "General",
         "AI Settings",
+        "Backup",
         "Categories",
         "Tags",
         "Apps",
@@ -65,8 +66,8 @@ describe("sidebar navigation", () => {
       expect(allNavItems).toEqual(expected);
     });
 
-    it("has 8 total items", () => {
-      expect(allNavItems).toHaveLength(8);
+    it("has 9 total items", () => {
+      expect(allNavItems).toHaveLength(9);
     });
   });
 
