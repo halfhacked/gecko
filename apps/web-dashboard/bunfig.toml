@@ -1,6 +1,15 @@
 [test]
 coverageSkipTestFiles = true
 
+# Exclude pure-JSX UI components from coverage — they require DOM/React
+# renderer to execute and cannot be unit-tested in Bun's server-side runtime.
+# Business logic extracted from these components IS tested separately.
+coveragePathIgnorePatterns = [
+  "src/components/ui/avatar.tsx",
+  "src/components/ui/tooltip.tsx",
+  "src/components/layout/sidebar-context.tsx",
+]
+
 [test.coverageThreshold]
 line = 90
 function = 90

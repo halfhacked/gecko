@@ -267,6 +267,98 @@ describe("GET /api/stats", () => {
     // Data query should have start_time filter
     expect(calls[1].params.length).toBe(2); // user_id + start_time
   });
+
+  test("week period includes start_time filter", async () => {
+    const { calls } = mockD1([
+      [{ user_id: "e2e-test-user", key: "timezone", value: "Asia/Shanghai", updated_at: Date.now() }],
+      [{ total_sessions: 50, total_duration: 25000, total_apps: 10 }],
+      [{ max_duration: 1800 }],
+      [],
+    ]);
+    const { GET } = await import("../../app/api/stats/route");
+
+    const req = new Request("http://localhost/api/stats?period=week");
+    const res = await GET(req);
+    const data = await res.json();
+
+    expect(data.period).toBe("week");
+    // Should have user_id + start_time params
+    expect(calls[1].params.length).toBe(2);
+    expect(calls[1].sql).toContain("start_time >= ?");
+  });
+
+  test("month period includes start_time filter", async () => {
+    const { calls } = mockD1([
+      [{ user_id: "e2e-test-user", key: "timezone", value: "Asia/Shanghai", updated_at: Date.now() }],
+      [{ total_sessions: 200, total_duration: 100000, total_apps: 20 }],
+      [{ max_duration: 7200 }],
+      [],
+    ]);
+    const { GET } = await import("../../app/api/stats/route");
+
+    const req = new Request("http://localhost/api/stats?period=month");
+    const res = await GET(req);
+    const data = await res.json();
+
+    expect(data.period).toBe("month");
+    expect(calls[1].params.length).toBe(2);
+    expect(calls[1].sql).toContain("start_time >= ?");
+  });
+
+  test("invalid period falls back to today", async () => {
+    mockD1([
+      [{ user_id: "e2e-test-user", key: "timezone", value: "Asia/Shanghai", updated_at: Date.now() }],
+      [{ total_sessions: 0, total_duration: 0, total_apps: 0 }],
+      [{ max_duration: 0 }],
+      [],
+    ]);
+    const { GET } = await import("../../app/api/stats/route");
+
+    const req = new Request("http://localhost/api/stats?period=invalid");
+    const res = await GET(req);
+    const data = await res.json();
+
+    expect(data.period).toBe("today");
+  });
+
+  test("all period has no start_time filter", async () => {
+    const { calls } = mockD1([
+      [{ user_id: "e2e-test-user", key: "timezone", value: "Asia/Shanghai", updated_at: Date.now() }],
+      [{ total_sessions: 100, total_duration: 50000, total_apps: 15 }],
+      [{ max_duration: 3600 }],
+      [],
+    ]);
+    const { GET } = await import("../../app/api/stats/route");
+
+    const req = new Request("http://localhost/api/stats?period=all");
+    const res = await GET(req);
+    const data = await res.json();
+
+    expect(data.period).toBe("all");
+    // Only user_id param, no start_time
+    expect(calls[1].params.length).toBe(1);
+  });
+
+  test("handles null totals gracefully", async () => {
+    mockD1([
+      [{ user_id: "e2e-test-user", key: "timezone", value: "Asia/Shanghai", updated_at: Date.now() }],
+      // Return empty array instead of row with values
+      [],
+      [],
+      [],
+    ]);
+    const { GET } = await import("../../app/api/stats/route");
+
+    const req = new Request("http://localhost/api/stats?period=all");
+    const res = await GET(req);
+    expect(res.status).toBe(200);
+
+    const data = await res.json();
+    expect(data.totalSessions).toBe(0);
+    expect(data.totalDuration).toBe(0);
+    expect(data.totalApps).toBe(0);
+    expect(data.longestSession).toBe(0);
+  });
 });
 
 // ---------------------------------------------------------------------------

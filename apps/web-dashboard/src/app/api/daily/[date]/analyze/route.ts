@@ -246,6 +246,21 @@ function buildSessionTimeline(sessions: SessionForChart[], tz: string): string {
 // Prompt builder
 // ---------------------------------------------------------------------------
 
+// Export internal helpers for unit testing
+export {
+  validateDate as _validateDate,
+  loadAiSettings as _loadAiSettings,
+  loadAppContext as _loadAppContext,
+  buildAppContextSection as _buildAppContextSection,
+  fmtDuration as _fmtDuration,
+  buildSessionTimeline as _buildSessionTimeline,
+  buildPrompt as _buildPrompt,
+  parseAiResponse as _parseAiResponse,
+  IDLE_BUNDLE_IDS as _IDLE_BUNDLE_IDS,
+  BROWSER_BUNDLE_IDS as _BROWSER_BUNDLE_IDS,
+};
+export type { AppContext as _AppContext };
+
 /** Build the analysis prompt from stats data and app context. */
 function buildPrompt(
   date: string,
