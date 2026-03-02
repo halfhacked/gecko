@@ -65,7 +65,57 @@ function EndpointSection() {
   const baseUrl =
     typeof window !== "undefined" ? window.location.origin : "";
 
-  const endpoint = `${baseUrl}/api/v1/snapshot?date=YYYY-MM-DD`;
+  const endpoints = [
+    {
+      id: "snapshot",
+      method: "GET" as const,
+      path: "/api/v1/snapshot?date=YYYY-MM-DD",
+      label: "Daily Snapshot",
+      description:
+        "Returns the full daily snapshot including stats, focus score, and AI analysis for a given date.",
+      response: `{
+  "date": "2026-03-03",
+  "timezone": "Asia/Shanghai",
+  "stats": {
+    "totalFocusMinutes": 312,
+    "sessionCount": 47,
+    "topApps": [{ "app": "Cursor", "minutes": 142 }, ...],
+    "focusScore": 82,
+    ...
+  },
+  "ai": { "summary": "...", "model": "..." } | null
+}`,
+    },
+    {
+      id: "sync",
+      method: "POST" as const,
+      path: "/api/sync",
+      label: "Session Sync",
+      description:
+        "Upload focus sessions from the macOS app. Accepts up to 1,000 sessions per batch. Returns 202 Accepted immediately; sessions are persisted asynchronously.",
+      response: `// Request body
+{
+  "sessions": [{
+    "id": "uuid",
+    "app_name": "Cursor",
+    "window_title": "api/page.tsx",
+    "start_time": 1709420400,
+    "duration": 180,
+    "url": null,
+    "bundle_id": "com.todesktop.xxx",
+    ...
+  }]
+}
+
+// Response (202 Accepted)
+{ "accepted": 12, "sync_id": "uuid" }`,
+    },
+  ];
+
+  const methodColors: Record<string, string> = {
+    GET: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+    POST: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+  };
 
   return (
     <section className="space-y-4">
@@ -75,47 +125,55 @@ function EndpointSection() {
       </div>
 
       <p className="text-sm text-muted-foreground">
-        Use these endpoints to access your Gecko data programmatically.
-        All requests require a valid API key in the Authorization header.
+        Gecko exposes two APIs. Both require a valid API key via the{" "}
+        <code className="text-xs bg-secondary px-1 py-0.5 rounded">
+          Authorization: Bearer gk_xxx
+        </code>{" "}
+        header.
       </p>
 
-      <div className="rounded-2xl bg-secondary p-5 space-y-3">
-        <div className="space-y-2">
-          <Label>Daily Snapshot</Label>
-          <p className="text-xs text-muted-foreground">
-            Returns the full daily snapshot including stats, scores, sessions, and AI analysis for a given date.
-          </p>
-          <div className="flex items-center gap-2">
-            <div className="flex-1 flex items-center rounded-lg bg-background ring-1 ring-border overflow-hidden">
-              <span className="shrink-0 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2.5 py-2 text-xs font-mono font-semibold">
-                GET
-              </span>
-              <code className="flex-1 px-3 py-2 text-xs font-mono break-all select-all">
-                {endpoint}
-              </code>
+      <div className="space-y-4">
+        {endpoints.map((ep) => (
+          <div key={ep.id} className="rounded-2xl bg-secondary p-5 space-y-3">
+            <div className="space-y-2">
+              <Label>{ep.label}</Label>
+              <p className="text-xs text-muted-foreground">{ep.description}</p>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 flex items-center rounded-lg bg-background ring-1 ring-border overflow-hidden">
+                  <span
+                    className={`shrink-0 px-2.5 py-2 text-xs font-mono font-semibold ${methodColors[ep.method]}`}
+                  >
+                    {ep.method}
+                  </span>
+                  <code className="flex-1 px-3 py-2 text-xs font-mono break-all select-all">
+                    {baseUrl}{ep.path}
+                  </code>
+                </div>
+                <Button
+                  variant="outline"
+                  size="icon-sm"
+                  onClick={() => copy(`${baseUrl}${ep.path}`, ep.id)}
+                >
+                  {copiedId === ep.id ? (
+                    <Check className="size-3.5" />
+                  ) : (
+                    <Copy className="size-3.5" />
+                  )}
+                </Button>
+              </div>
             </div>
-            <Button
-              variant="outline"
-              size="icon-sm"
-              onClick={() => copy(endpoint, "endpoint")}
-            >
-              {copiedId === "endpoint" ? (
-                <Check className="size-3.5" />
-              ) : (
-                <Copy className="size-3.5" />
-              )}
-            </Button>
-          </div>
-        </div>
 
-        <div className="space-y-2 pt-2">
-          <Label>Authentication</Label>
-          <div className="flex items-center rounded-lg bg-background ring-1 ring-border overflow-hidden">
-            <code className="px-3 py-2 text-xs font-mono text-muted-foreground">
-              Authorization: Bearer gk_your_api_key
-            </code>
+            {/* Collapsible response example */}
+            <details className="group">
+              <summary className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground transition-colors select-none">
+                Example response
+              </summary>
+              <pre className="mt-2 max-h-60 overflow-auto rounded-lg bg-background p-3 text-xs font-mono ring-1 ring-border whitespace-pre-wrap">
+                {ep.response}
+              </pre>
+            </details>
           </div>
-        </div>
+        ))}
       </div>
     </section>
   );
