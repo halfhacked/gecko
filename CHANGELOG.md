@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.1.3] - 2026-03-02
+
+### Web Dashboard
+
+#### Added
+- **Backy backup integration**: Full push/pull backup system for automated data backup to a Backy service
+  - Push backup: configure webhook URL + API key, test connection, execute manual push
+  - Pull webhook: generate a webhook key so Backy can trigger scheduled backups via `POST /api/backy/pull`
+  - Full data export: all 10 database tables (focus sessions, categories, tags, settings, etc.) exported as gzip-compressed JSON envelope
+  - Paginated focus session export (5,000 rows per page) for large datasets
+  - Backup history viewer via Backy service API
+  - Backy credentials excluded from backup envelope for security
+  - Backup tag format: `v{version}-{date}-{N}sess-{N}cat-{N}tag`
+- **Backup settings page** (`/settings/backy`): Two-card layout for push configuration and pull webhook management with one-time key reveal dialog
+- **Sidebar navigation**: Added "Backup" entry under Settings group
+- **Product roadmap**: Internal roadmap document with 20 features from brainstorming session
+
+#### Fixed
+- Coverage threshold enforcement added to pre-commit hook
+- Unused parameter lint warning in daily analyze route
+
+### Mac Client
+
+No changes in this release.
+
 ## [1.1.2] - 2026-03-01
 
 ### Web Dashboard
