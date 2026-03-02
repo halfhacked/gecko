@@ -123,8 +123,11 @@ function PushConfigSection() {
           message: data.error ?? "Connection failed",
         });
       }
-    } catch {
-      setTestResult({ ok: false, message: "Network error" });
+    } catch (err) {
+      setTestResult({
+        ok: false,
+        message: err instanceof Error ? err.message : "Network error",
+      });
     } finally {
       setTesting(false);
     }
@@ -149,8 +152,11 @@ function PushConfigSection() {
           message: data.error ?? "Push failed",
         });
       }
-    } catch {
-      setPushResult({ ok: false, message: "Network error" });
+    } catch (err) {
+      setPushResult({
+        ok: false,
+        message: err instanceof Error ? err.message : "Network error",
+      });
     } finally {
       setPushing(false);
     }

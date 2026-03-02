@@ -72,7 +72,14 @@ export async function executePush(
     new Blob([compressed], { type: "application/gzip" }),
     fileName,
   );
-  formData.append("environment", process.env.NODE_ENV ?? "development");
+  // Backy expects: dev | prod | staging | test
+  const envMap: Record<string, string> = {
+    production: "prod",
+    development: "dev",
+    test: "test",
+  };
+  const env = envMap[process.env.NODE_ENV ?? "development"] ?? "dev";
+  formData.append("environment", env);
   formData.append("tag", tag);
 
   try {
