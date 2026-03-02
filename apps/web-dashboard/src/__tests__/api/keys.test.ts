@@ -167,6 +167,106 @@ describe("/api/keys", () => {
 // ---------------------------------------------------------------------------
 
 describe("/api/keys/[id]", () => {
+  // ---------------------------------------------------------------------------
+  // PATCH /api/keys/[id] — Rename API key
+  // ---------------------------------------------------------------------------
+
+  describe("PATCH /api/keys/[id]", () => {
+    test("renames an API key", async () => {
+      mockD1([
+        [{ id: "key-1", user_id: "e2e-test-user" }], // findOwnedKey
+        [],                                            // UPDATE
+      ]);
+      const { PATCH } = await import("../../app/api/keys/[id]/route");
+
+      const req = new Request("http://localhost/api/keys/key-1", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "Work MacBook" }),
+      });
+
+      const res = await PATCH(req, { params: Promise.resolve({ id: "key-1" }) });
+      expect(res.status).toBe(200);
+
+      const data = await res.json();
+      expect(data.id).toBe("key-1");
+      expect(data.name).toBe("Work MacBook");
+    });
+
+    test("returns 400 when name is missing", async () => {
+      mockD1();
+      const { PATCH } = await import("../../app/api/keys/[id]/route");
+
+      const req = new Request("http://localhost/api/keys/key-1", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+
+      const res = await PATCH(req, { params: Promise.resolve({ id: "key-1" }) });
+      expect(res.status).toBe(400);
+    });
+
+    test("returns 400 when name is empty string", async () => {
+      mockD1();
+      const { PATCH } = await import("../../app/api/keys/[id]/route");
+
+      const req = new Request("http://localhost/api/keys/key-1", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "   " }),
+      });
+
+      const res = await PATCH(req, { params: Promise.resolve({ id: "key-1" }) });
+      expect(res.status).toBe(400);
+    });
+
+    test("returns 400 for invalid JSON body", async () => {
+      mockD1();
+      const { PATCH } = await import("../../app/api/keys/[id]/route");
+
+      const req = new Request("http://localhost/api/keys/key-1", {
+        method: "PATCH",
+        body: "not json",
+      });
+
+      const res = await PATCH(req, { params: Promise.resolve({ id: "key-1" }) });
+      expect(res.status).toBe(400);
+    });
+
+    test("returns 404 when key does not exist", async () => {
+      mockD1([[]]);
+      const { PATCH } = await import("../../app/api/keys/[id]/route");
+
+      const req = new Request("http://localhost/api/keys/nonexistent", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "New Name" }),
+      });
+
+      const res = await PATCH(req, { params: Promise.resolve({ id: "nonexistent" }) });
+      expect(res.status).toBe(404);
+    });
+
+    test("returns 404 when key belongs to different user", async () => {
+      mockD1([[{ id: "key-1", user_id: "other-user" }]]);
+      const { PATCH } = await import("../../app/api/keys/[id]/route");
+
+      const req = new Request("http://localhost/api/keys/key-1", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "New Name" }),
+      });
+
+      const res = await PATCH(req, { params: Promise.resolve({ id: "key-1" }) });
+      expect(res.status).toBe(404);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // DELETE /api/keys/[id] — Revoke API key
+  // ---------------------------------------------------------------------------
+
   describe("DELETE /api/keys/[id]", () => {
     test("deletes user's API key", async () => {
       // First query: check key exists and belongs to user

@@ -1,3 +1,4 @@
+// PATCH  /api/keys/[id] — Rename an API key
 // DELETE /api/keys/[id] — Revoke an API key
 
 import { requireSession, jsonOk, jsonError } from "@/lib/api-helpers";
@@ -5,23 +6,76 @@ import { query, execute } from "@/lib/d1";
 
 export const dynamic = "force-dynamic";
 
-/** DELETE /api/keys/[id] — Revoke an API key by ID. */
-export async function DELETE(
-  _req: Request,
-  { params }: { params: Promise<{ id: string }> }
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Verify the key exists and belongs to the authenticated user. */
+async function findOwnedKey(
+  keyId: string,
+  userId: string,
+): Promise<{ id: string; user_id: string } | null> {
+  const rows = await query<{ id: string; user_id: string }>(
+    "SELECT id, user_id FROM api_keys WHERE id = ?",
+    [keyId],
+  );
+  if (rows.length === 0 || rows[0].user_id !== userId) return null;
+  return rows[0];
+}
+
+// ---------------------------------------------------------------------------
+// PATCH /api/keys/[id] — Rename an API key
+// ---------------------------------------------------------------------------
+
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
 ): Promise<Response> {
   const { user, error } = await requireSession();
   if (error) return error;
 
   const { id } = await params;
 
-  // Verify the key exists and belongs to this user
-  const rows = await query<{ id: string; user_id: string }>(
-    "SELECT id, user_id FROM api_keys WHERE id = ?",
-    [id]
+  let body: { name?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return jsonError("Invalid JSON body", 400);
+  }
+
+  const name = body.name?.trim();
+  if (!name) {
+    return jsonError("name is required", 400);
+  }
+
+  const key = await findOwnedKey(id, user.userId);
+  if (!key) {
+    return jsonError("API key not found", 404);
+  }
+
+  await execute(
+    "UPDATE api_keys SET name = ? WHERE id = ? AND user_id = ?",
+    [name, id, user.userId],
   );
 
-  if (rows.length === 0 || rows[0].user_id !== user.userId) {
+  return jsonOk({ id, name });
+}
+
+// ---------------------------------------------------------------------------
+// DELETE /api/keys/[id] — Revoke an API key
+// ---------------------------------------------------------------------------
+
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+): Promise<Response> {
+  const { user, error } = await requireSession();
+  if (error) return error;
+
+  const { id } = await params;
+
+  const key = await findOwnedKey(id, user.userId);
+  if (!key) {
     return jsonError("API key not found", 404);
   }
 
