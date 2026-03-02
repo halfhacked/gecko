@@ -31,7 +31,9 @@ export default defineConfig({
   webServer: {
     command: "E2E_SKIP_AUTH=true bunx vinext dev --port 23000",
     port: 23000,
-    timeout: 30_000,
+    timeout: 60_000,
+    stdout: "pipe",
+    stderr: "pipe",
     reuseExistingServer: !process.env.CI,
   },
 });
