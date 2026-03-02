@@ -76,6 +76,7 @@ const navGroups: NavGroup[] = [
     label: "Integrations",
     defaultOpen: true,
     items: [
+      { href: "/integrations/api", label: "API", icon: Plug },
       { href: "/settings/backy", label: "Backy", icon: HardDriveUpload },
     ],
   },

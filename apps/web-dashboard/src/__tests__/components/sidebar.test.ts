@@ -29,9 +29,10 @@ describe("sidebar navigation", () => {
       ]);
     });
 
-    it("group 2 is Integrations with Backy", () => {
+    it("group 2 is Integrations with API, Backy", () => {
       expect(navGroups[2]!.label).toBe("Integrations");
       expect(navGroups[2]!.items.map((i) => i.label)).toEqual([
+        "API",
         "Backy",
       ]);
     });
@@ -78,8 +79,8 @@ describe("sidebar navigation", () => {
       expect(allNavItems).toEqual(expected);
     });
 
-    it("has 9 total items", () => {
-      expect(allNavItems).toHaveLength(9);
+    it("has 10 total items", () => {
+      expect(allNavItems).toHaveLength(10);
     });
   });
 
