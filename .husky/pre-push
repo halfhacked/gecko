@@ -48,11 +48,11 @@ echo "==> [pre-push] ESLint passed."
 # 3. E2E / Integration tests (when available)
 # ----------------------------------------------------------
 if [ -d "apps/web-dashboard/src/__tests__/e2e" ]; then
-  echo "==> [pre-push] Running E2E tests..."
+  echo "==> [pre-push] Running API E2E tests..."
   cd apps/web-dashboard
-  bun test src/__tests__/e2e/ --timeout 60000 2>&1 | tail -10
+  RUN_E2E=true bun test src/__tests__/e2e/ --timeout 60000 2>&1 | tail -10
   cd ../..
-  echo "==> [pre-push] E2E tests passed."
+  echo "==> [pre-push] API E2E tests passed."
 else
   echo "==> [pre-push] Skipping E2E (no test directory yet)."
 fi
