@@ -512,11 +512,11 @@ function ApiKeysSection({
 // API Test Section
 // =============================================================================
 
-function TestSection({ keys }: { keys: ApiKey[] }) {
+function TestSection() {
+  const [apiKey, setApiKey] = useState("");
   const [selectedDate, setSelectedDate] = useState(
     () => new Date().toISOString().split("T")[0],
   );
-  const [selectedKeyId, setSelectedKeyId] = useState("");
   const [testing, setTesting] = useState(false);
   const [result, setResult] = useState<{
     status: number;
@@ -526,14 +526,12 @@ function TestSection({ keys }: { keys: ApiKey[] }) {
   const [error, setError] = useState<string | null>(null);
   const { copiedId, copy } = useCopyToClipboard();
 
-  // Auto-select first key when keys load
-  useEffect(() => {
-    if (keys.length > 0 && !selectedKeyId) {
-      setSelectedKeyId(keys[0].id);
-    }
-  }, [keys, selectedKeyId]);
-
   async function handleTest() {
+    if (!apiKey.trim()) {
+      setError("Paste an API key to authenticate the request.");
+      return;
+    }
+
     setTesting(true);
     setResult(null);
     setError(null);
@@ -542,6 +540,11 @@ function TestSection({ keys }: { keys: ApiKey[] }) {
       const start = performance.now();
       const res = await fetch(
         `/api/v1/snapshot?date=${selectedDate}`,
+        {
+          headers: {
+            Authorization: `Bearer ${apiKey.trim()}`,
+          },
+        },
       );
       const durationMs = Math.round(performance.now() - start);
 
@@ -566,8 +569,12 @@ function TestSection({ keys }: { keys: ApiKey[] }) {
       </div>
 
       <p className="text-sm text-muted-foreground">
-        Test the snapshot API with your current session. The request uses your
-        dashboard session for auth so no API key is needed here.
+        Send a test request to the snapshot endpoint. Paste one of your API
+        keys below — it will be sent as the{" "}
+        <code className="text-xs bg-secondary px-1 py-0.5 rounded">
+          Authorization
+        </code>{" "}
+        header.
       </p>
 
       {error && (
@@ -578,6 +585,18 @@ function TestSection({ keys }: { keys: ApiKey[] }) {
       )}
 
       <div className="rounded-2xl bg-secondary p-5 space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="test-api-key">API Key</Label>
+          <Input
+            id="test-api-key"
+            type="password"
+            placeholder="gk_..."
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            className="font-mono text-xs"
+          />
+        </div>
+
         <div className="flex items-end gap-3">
           <div className="space-y-2 flex-1">
             <Label htmlFor="test-date">Date</Label>
@@ -590,7 +609,7 @@ function TestSection({ keys }: { keys: ApiKey[] }) {
           </div>
           <Button
             onClick={handleTest}
-            disabled={testing || !selectedDate}
+            disabled={testing || !selectedDate || !apiKey.trim()}
           >
             {testing ? (
               <Loader2 className="size-4 animate-spin" />
@@ -715,7 +734,7 @@ export default function ApiPage() {
 
         <Separator />
 
-        <TestSection keys={keys} />
+        <TestSection />
       </div>
     </AppShell>
   );
