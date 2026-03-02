@@ -7,8 +7,8 @@ import {
 
 describe("sidebar navigation", () => {
   describe("navGroups", () => {
-    it("has 2 groups", () => {
-      expect(navGroups).toHaveLength(2);
+    it("has 4 groups", () => {
+      expect(navGroups).toHaveLength(4);
     });
 
     it("group 0 is Overview with Dashboard, Sessions, Daily Review", () => {
@@ -20,15 +20,27 @@ describe("sidebar navigation", () => {
       ]);
     });
 
-    it("group 1 is Settings with General, AI Settings, Backup, Categories, Tags, Apps", () => {
-      expect(navGroups[1]!.label).toBe("Settings");
+    it("group 1 is Data with Apps, Categories, Tags", () => {
+      expect(navGroups[1]!.label).toBe("Data");
       expect(navGroups[1]!.items.map((i) => i.label)).toEqual([
-        "General",
-        "AI Settings",
-        "Backup",
+        "Apps",
         "Categories",
         "Tags",
-        "Apps",
+      ]);
+    });
+
+    it("group 2 is Integrations with Backup", () => {
+      expect(navGroups[2]!.label).toBe("Integrations");
+      expect(navGroups[2]!.items.map((i) => i.label)).toEqual([
+        "Backup",
+      ]);
+    });
+
+    it("group 3 is Settings with General, AI Settings", () => {
+      expect(navGroups[3]!.label).toBe("Settings");
+      expect(navGroups[3]!.items.map((i) => i.label)).toEqual([
+        "General",
+        "AI Settings",
       ]);
     });
 

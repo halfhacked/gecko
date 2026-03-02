@@ -15,6 +15,7 @@ import {
   Tags,
   Bot,
   HardDriveUpload,
+  Plug,
   PanelLeft,
   LogOut,
   ChevronUp,
@@ -63,15 +64,27 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
+    label: "Data",
+    defaultOpen: true,
+    items: [
+      { href: "/apps", label: "Apps", icon: AppWindow },
+      { href: "/settings/categories", label: "Categories", icon: Layers },
+      { href: "/settings/tags", label: "Tags", icon: Tags },
+    ],
+  },
+  {
+    label: "Integrations",
+    defaultOpen: true,
+    items: [
+      { href: "/settings/backy", label: "Backup", icon: HardDriveUpload },
+    ],
+  },
+  {
     label: "Settings",
     defaultOpen: true,
     items: [
       { href: "/settings", label: "General", icon: SlidersHorizontal, exact: true },
       { href: "/settings/ai", label: "AI Settings", icon: Bot },
-      { href: "/settings/backy", label: "Backup", icon: HardDriveUpload },
-      { href: "/settings/categories", label: "Categories", icon: Layers },
-      { href: "/settings/tags", label: "Tags", icon: Tags },
-      { href: "/apps", label: "Apps", icon: AppWindow },
     ],
   },
 ];
