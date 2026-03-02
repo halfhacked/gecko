@@ -2,7 +2,7 @@ import { defineConfig, globalIgnores } from "eslint/config";
 import tseslint from "typescript-eslint";
 
 const eslintConfig = defineConfig([
-  ...tseslint.configs.recommended,
+  ...tseslint.configs.strict,
   globalIgnores([
     ".next/**",
     "out/**",
@@ -16,6 +16,7 @@ const eslintConfig = defineConfig([
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
+      "@typescript-eslint/no-non-null-assertion": "off",
     },
   },
 ]);
