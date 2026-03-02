@@ -24,13 +24,34 @@ import {
   RefreshCw,
   Trash2,
   Plug,
+  History,
+  Package,
 } from "lucide-react";
+
+// =============================================================================
+// Types
+// =============================================================================
+
+interface BackupEntry {
+  id: string;
+  tag: string | null;
+  environment: string | null;
+  file_size: number;
+  is_single_json: number;
+  created_at: string;
+}
 
 // =============================================================================
 // Push Configuration Section
 // =============================================================================
 
-function PushConfigSection() {
+function PushConfigSection({
+  onConfigured,
+  onPushSuccess,
+}: {
+  onConfigured: () => void;
+  onPushSuccess: () => void;
+}) {
   const [webhookUrl, setWebhookUrl] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [configured, setConfigured] = useState(false);
@@ -53,7 +74,7 @@ function PushConfigSection() {
     message: string;
   } | null>(null);
 
-  // Fetch current config
+  // Fetch current config on mount
   useEffect(() => {
     (async () => {
       try {
@@ -63,6 +84,7 @@ function PushConfigSection() {
           setWebhookUrl(data.webhookUrl ?? "");
           setApiKey(data.apiKey ?? "");
           setConfigured(data.configured);
+          if (data.configured) onConfigured();
         }
       } catch {
         setError("Failed to load configuration");
@@ -70,7 +92,7 @@ function PushConfigSection() {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [onConfigured]);
 
   async function handleSave() {
     setSaving(true);
@@ -91,6 +113,7 @@ function PushConfigSection() {
 
       setConfigured(true);
       setSaved(true);
+      onConfigured();
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save");
@@ -146,6 +169,7 @@ function PushConfigSection() {
           ok: true,
           message: `Backup complete — ${data.tag} (${formatBytes(data.compressedBytes)}, ${data.durationMs}ms)`,
         });
+        onPushSuccess();
       } else {
         setPushResult({
           ok: false,
@@ -305,6 +329,124 @@ function PushConfigSection() {
               )}
             </div>
           </>
+        )}
+      </div>
+    </section>
+  );
+}
+
+// =============================================================================
+// Backup History Section
+// =============================================================================
+
+function BackupHistorySection({ refreshKey }: { refreshKey: number }) {
+  const [loading, setLoading] = useState(true);
+  const [projectName, setProjectName] = useState<string | null>(null);
+  const [totalBackups, setTotalBackups] = useState(0);
+  const [backups, setBackups] = useState<BackupEntry[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchHistory = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await fetch("/api/backy/history");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(
+          (data as { error?: string }).error ?? `Failed to load (${res.status})`,
+        );
+      }
+      const data = await res.json();
+      setProjectName(data.project_name ?? null);
+      setTotalBackups(data.total_backups ?? 0);
+      setBackups(data.recent_backups ?? []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load history");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory, refreshKey]);
+
+  return (
+    <section className="space-y-4">
+      <div className="flex items-center gap-2">
+        <History
+          className="size-5 text-muted-foreground"
+          strokeWidth={1.5}
+        />
+        <h2 className="text-lg font-semibold">Backup History</h2>
+        {!loading && totalBackups > 0 && (
+          <span className="text-xs text-muted-foreground tabular-nums">
+            ({totalBackups} total)
+          </span>
+        )}
+      </div>
+
+      {projectName && (
+        <p className="text-sm text-muted-foreground">
+          Project: <span className="font-medium text-foreground">{projectName}</span>
+        </p>
+      )}
+
+      {error && (
+        <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          <AlertTriangle className="size-4 shrink-0" />
+          {error}
+        </div>
+      )}
+
+      <div className="rounded-2xl bg-secondary p-5">
+        {loading ? (
+          <div className="space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-12 rounded-lg bg-muted animate-pulse" />
+            ))}
+          </div>
+        ) : backups.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-background ring-1 ring-border mb-3">
+              <Package
+                className="size-5 text-muted-foreground"
+                strokeWidth={1.5}
+              />
+            </div>
+            <p className="text-sm font-medium">No backups yet</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Push your first backup using the button above.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {backups.map((b) => (
+              <div
+                key={b.id}
+                className="flex items-center gap-3 rounded-xl bg-background px-4 py-3 ring-1 ring-border"
+              >
+                <Package className="size-4 text-muted-foreground shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {b.tag ?? "Untitled backup"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatRelativeTime(b.created_at)}
+                    {b.environment && (
+                      <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase">
+                        {b.environment}
+                      </span>
+                    )}
+                  </p>
+                </div>
+                <span className="text-xs text-muted-foreground tabular-nums shrink-0">
+                  {formatBytes(b.file_size)}
+                </span>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </section>
@@ -618,6 +760,15 @@ function PullWebhookSection() {
 // =============================================================================
 
 export default function BackySettingsPage() {
+  const [pushConfigured, setPushConfigured] = useState(false);
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
+
+  const handleConfigured = useCallback(() => setPushConfigured(true), []);
+  const handlePushSuccess = useCallback(
+    () => setHistoryRefreshKey((k) => k + 1),
+    [],
+  );
+
   return (
     <AppShell
       breadcrumbs={[
@@ -634,7 +785,17 @@ export default function BackySettingsPage() {
           </p>
         </div>
 
-        <PushConfigSection />
+        <PushConfigSection
+          onConfigured={handleConfigured}
+          onPushSuccess={handlePushSuccess}
+        />
+
+        {pushConfigured && (
+          <>
+            <Separator />
+            <BackupHistorySection refreshKey={historyRefreshKey} />
+          </>
+        )}
 
         <Separator />
 
@@ -652,4 +813,27 @@ function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatRelativeTime(iso: string): string {
+  const now = Date.now();
+  const then = new Date(iso).getTime();
+  const diffMs = now - then;
+
+  if (diffMs < 0) return "just now";
+
+  const seconds = Math.floor(diffMs / 1000);
+  if (seconds < 60) return "just now";
+
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+
+  // Fall back to date string
+  return new Date(iso).toLocaleDateString();
 }
