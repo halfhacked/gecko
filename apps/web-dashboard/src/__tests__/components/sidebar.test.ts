@@ -29,10 +29,10 @@ describe("sidebar navigation", () => {
       ]);
     });
 
-    it("group 2 is Integrations with Backup", () => {
+    it("group 2 is Integrations with Backy", () => {
       expect(navGroups[2]!.label).toBe("Integrations");
       expect(navGroups[2]!.items.map((i) => i.label)).toEqual([
-        "Backup",
+        "Backy",
       ]);
     });
 

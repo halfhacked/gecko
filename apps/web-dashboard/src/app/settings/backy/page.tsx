@@ -772,13 +772,13 @@ export default function BackySettingsPage() {
   return (
     <AppShell
       breadcrumbs={[
-        { label: "Settings", href: "/settings" },
-        { label: "Backup" },
+        { label: "Integrations" },
+        { label: "Backy" },
       ]}
     >
       <div className="space-y-8 max-w-2xl">
         <div>
-          <h1 className="text-2xl font-semibold">Backup</h1>
+          <h1 className="text-2xl font-semibold">Backy</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Configure automatic backups with Backy. Push your data to a backup
             service, or let Backy pull on a schedule.
