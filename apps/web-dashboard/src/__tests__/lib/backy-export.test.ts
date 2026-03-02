@@ -174,11 +174,8 @@ describe("exportUserData — session pagination", () => {
 
   test("paginates when sessions = PAGE_SIZE (needs second query to confirm end)", async () => {
     const fullPage = Array.from({ length: PAGE_SIZE }, (_, i) => makeSession(`s-${i}`));
-    let queryCount = 0;
-
     const { calls } = mockD1Router({
       "focus_sessions": (params) => {
-        queryCount++;
         const offset = params[2] as number;
         if (offset === 0) return fullPage;
         return []; // second page is empty
