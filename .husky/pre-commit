@@ -14,9 +14,9 @@ xcodebuild test \
   2>&1 | tail -5
 cd ../..
 
-# Web dashboard tests
+# Web dashboard tests (with coverage gate — enforces bunfig.toml thresholds)
 cd apps/web-dashboard
-bun test src/__tests__/ --timeout 30000 2>&1 | tail -5
+bun test --coverage src/__tests__/ --timeout 30000 2>&1 | tail -20
 cd ../..
 
 echo "==> [pre-commit] Tests passed."
