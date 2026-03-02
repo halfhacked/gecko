@@ -7,7 +7,7 @@
     "dev": "vinext dev --port 7028",
     "build": "vinext build",
     "start": "vinext start --port ${PORT:-7028}",
-    "dev:e2e": "E2E_SKIP_AUTH=true vinext dev --port 10728",
+    "dev:e2e": "E2E_SKIP_AUTH=true vinext dev --port 13000",
     "lint": "eslint --max-warnings 0",
     "test": "bun test src/__tests__/ --timeout 30000",
     "test:coverage": "bun test src/__tests__/ --coverage --timeout 30000",

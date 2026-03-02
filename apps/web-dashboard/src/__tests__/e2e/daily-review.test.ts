@@ -1,6 +1,6 @@
 // E2E: Daily Review API round-trip.
 //
-// Runs against the dev:e2e server (port 10728, E2E_SKIP_AUTH=true).
+// Runs against the dev:e2e server (port 13000, E2E_SKIP_AUTH=true).
 // Tests the GET /api/daily/:date and POST /api/daily/:date/analyze endpoints.
 //
 // IMPORTANT: Skipped unless RUN_E2E=true.
@@ -18,7 +18,7 @@ const SHOULD_RUN = process.env.RUN_E2E === "true";
 // Config
 // ---------------------------------------------------------------------------
 
-const BASE_URL = "http://localhost:10728";
+const BASE_URL = "http://localhost:13000";
 const STARTUP_TIMEOUT_MS = 30_000;
 
 // ---------------------------------------------------------------------------
@@ -48,7 +48,7 @@ beforeAll(async () => {
   try {
     const res = await fetch(`${BASE_URL}/api/live`);
     if (res.status > 0) {
-      console.log("[E2E] Server already running on port 10728");
+      console.log("[E2E] Server already running on port 13000");
       return;
     }
   } catch {
