@@ -45,13 +45,25 @@ cd ../..
 echo "==> [pre-push] ESLint passed."
 
 # ----------------------------------------------------------
-# 3. E2E / Integration tests (when available)
+# 3. API E2E tests (auto-managed server on port 13000)
 # ----------------------------------------------------------
 if [ -d "apps/web-dashboard/src/__tests__/e2e" ]; then
+  echo "==> [pre-push] Starting E2E server..."
+  scripts/e2e-server.sh start 13000
+
   echo "==> [pre-push] Running API E2E tests..."
+  E2E_FAILED=0
   cd apps/web-dashboard
-  RUN_E2E=true bun test src/__tests__/e2e/ --timeout 60000 2>&1 | tail -10
+  RUN_E2E=true bun test src/__tests__/e2e/ --timeout 60000 2>&1 | tail -10 || E2E_FAILED=1
   cd ../..
+
+  echo "==> [pre-push] Stopping E2E server..."
+  scripts/e2e-server.sh stop
+
+  if [ "$E2E_FAILED" -ne 0 ]; then
+    echo "==> [pre-push] FAILED: API E2E tests failed"
+    exit 1
+  fi
   echo "==> [pre-push] API E2E tests passed."
 else
   echo "==> [pre-push] Skipping E2E (no test directory yet)."
