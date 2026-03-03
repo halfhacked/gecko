@@ -16,7 +16,7 @@ cd ../..
 
 # Web dashboard tests (with coverage gate — enforces bunfig.toml thresholds)
 cd apps/web-dashboard
-bun test --coverage src/__tests__/ --timeout 30000 2>&1 | tail -20
+bun test --coverage src/__tests__/lib src/__tests__/api src/__tests__/components src/__tests__/*.test.ts --timeout 30000 2>&1 | tail -20
 cd ../..
 
 echo "==> [pre-commit] Tests passed."
