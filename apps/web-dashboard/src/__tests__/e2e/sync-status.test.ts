@@ -96,11 +96,12 @@ describe("Sync Status E2E", () => {
       body: JSON.stringify({
         sessions: [
           {
+            id: crypto.randomUUID(),
             app_name: "Finder",
             bundle_id: "com.apple.finder",
             start_time: now - 120,
             duration: 120,
-            title: "Home",
+            window_title: "Home",
           },
         ],
       }),

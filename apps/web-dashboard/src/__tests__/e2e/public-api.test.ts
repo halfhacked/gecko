@@ -98,12 +98,13 @@ describe("E2E: GET /api/v1/snapshot", () => {
         body: JSON.stringify({
           sessions: [
             {
+              id: crypto.randomUUID(),
               app_name: "Safari",
               bundle_id: "com.apple.Safari",
               start_time: now - 300,
               duration: 300,
               url: "https://example.com",
-              title: "Example",
+              window_title: "Example",
             },
           ],
         }),
