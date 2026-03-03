@@ -1,6 +1,6 @@
 // E2E: Public API — test /api/v1/snapshot with API key authentication.
 //
-// Runs against the dev:e2e server (port 13000, E2E_SKIP_AUTH=true).
+// Runs against the dev:e2e server (port 17028, E2E_SKIP_AUTH=true).
 // IMPORTANT: Skipped unless RUN_E2E=true.
 
 import { describe, test, expect, beforeAll, afterAll } from "bun:test";
@@ -16,7 +16,7 @@ const SHOULD_RUN = process.env.RUN_E2E === "true";
 // Config
 // ---------------------------------------------------------------------------
 
-const BASE_URL = "http://localhost:13000";
+const BASE_URL = "http://localhost:17028";
 const STARTUP_TIMEOUT_MS = 30_000;
 
 // ---------------------------------------------------------------------------
@@ -44,7 +44,7 @@ beforeAll(async () => {
   try {
     const res = await fetch(`${BASE_URL}/api/live`);
     if (res.status > 0) {
-      console.log("[E2E] Server already running on port 13000");
+      console.log("[E2E] Server already running on port 17028");
       return;
     }
   } catch {}

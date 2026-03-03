@@ -50,8 +50,8 @@ violations but may miss warning-level issues.
 | Purpose | Current | Target |
 |---------|---------|--------|
 | Dev server | 7028 | 7028 (unchanged) |
-| API E2E server | 10728 | 13000 |
-| BDD E2E server | N/A | 23000 |
+| API E2E server | 10728 | 17028 |
+| BDD E2E server | N/A | 27028 |
 
 Update: `dev:e2e` script, all E2E test files, pre-push hook.
 
@@ -102,8 +102,8 @@ Integrate `scripts/e2e-server.sh` into `.husky/pre-push`:
 - `bunx playwright install chromium`
 - Create `playwright.config.ts` with:
   - `testDir: './src/__tests__/bdd'`
-  - `baseURL: 'http://localhost:23000'`
-  - `webServer` config for auto-start on port 23000
+  - `baseURL: 'http://localhost:27028'`
+  - `webServer` config for auto-start on port 27028
   - Screenshot on failure
 
 ### 3.2 Core user flow BDD tests
@@ -120,15 +120,15 @@ Integrate `scripts/e2e-server.sh` into `.husky/pre-push`:
 
 Add BDD E2E stage after API E2E:
 ```
-Stage 3a: API E2E (port 13000)
-Stage 3b: BDD E2E (port 23000, via Playwright)
+Stage 3a: API E2E (port 17028)
+Stage 3b: BDD E2E (port 27028, via Playwright)
 ```
 
 ### 3.4 Add npm scripts
 
 ```json
 "test:bdd": "bunx playwright test",
-"dev:bdd": "E2E_SKIP_AUTH=true vinext dev --port 23000"
+"dev:bdd": "E2E_SKIP_AUTH=true vinext dev --port 27028"
 ```
 
 ## Execution Order

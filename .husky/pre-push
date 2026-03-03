@@ -45,11 +45,11 @@ cd ../..
 echo "==> [pre-push] ESLint passed."
 
 # ----------------------------------------------------------
-# 3. API E2E tests (auto-managed server on port 13000)
+# 3. API E2E tests (auto-managed server on port 17028)
 # ----------------------------------------------------------
 if [ -d "apps/web-dashboard/src/__tests__/e2e" ]; then
   echo "==> [pre-push] Starting E2E server..."
-  scripts/e2e-server.sh start 13000
+  scripts/e2e-server.sh start 17028
 
   echo "==> [pre-push] Running API E2E tests..."
   E2E_FAILED=0
@@ -70,7 +70,7 @@ else
 fi
 
 # ----------------------------------------------------------
-# 4. BDD E2E tests (Playwright on port 23000)
+# 4. BDD E2E tests (Playwright on port 27028)
 # ----------------------------------------------------------
 if [ -d "apps/web-dashboard/src/__tests__/bdd" ]; then
   echo "==> [pre-push] Running BDD E2E tests (Playwright)..."

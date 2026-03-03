@@ -1,6 +1,6 @@
 // E2E: Sync round-trip — POST sessions via /api/sync, verify via /api/sessions.
 //
-// Runs against the dev:e2e server (port 13000, E2E_SKIP_AUTH=true).
+// Runs against the dev:e2e server (port 17028, E2E_SKIP_AUTH=true).
 // Spawns the server, waits for readiness, runs BDD-style scenarios, then shuts down.
 //
 // IMPORTANT: Skipped unless explicitly invoked via `bun run test:e2e`.
@@ -19,7 +19,7 @@ const SHOULD_RUN = process.env.RUN_E2E === "true";
 // Config
 // ---------------------------------------------------------------------------
 
-const BASE_URL = "http://localhost:13000";
+const BASE_URL = "http://localhost:17028";
 const STARTUP_TIMEOUT_MS = 30_000;
 const DRAIN_WAIT_MS = 4_000; // wait for async queue drain (interval is 2s)
 
@@ -50,7 +50,7 @@ beforeAll(async () => {
   try {
     const res = await fetch(`${BASE_URL}/api/sessions`);
     if (res.status > 0) {
-      console.log("[E2E] Server already running on port 13000");
+      console.log("[E2E] Server already running on port 17028");
       return;
     }
   } catch {
