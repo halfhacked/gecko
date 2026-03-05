@@ -1,5 +1,6 @@
 import Foundation
 import Security
+import ServiceManagement
 
 // MARK: - Keychain Helper
 
@@ -89,6 +90,10 @@ final class SettingsManager: ObservableObject {
     /// When true, API key is stored in UserDefaults instead of Keychain (for testing).
     private let useKeychainForApiKey: Bool
 
+    /// When false, launchAtLogin is a no-op (used in test environments where
+    /// SMAppService is unavailable).
+    private let useSMAppService: Bool
+
     // MARK: - Published State
 
     /// The current database file path. Falls back to the default location.
@@ -138,11 +143,37 @@ final class SettingsManager: ObservableObject {
         }
     }
 
+    /// Whether the app should launch at macOS login.
+    /// Backed by SMAppService (system-managed), not UserDefaults.
+    /// Returns false and is a no-op in test environments.
+    var launchAtLogin: Bool {
+        get {
+            guard useSMAppService else { return false }
+            return SMAppService.mainApp.status == .enabled
+        }
+        set {
+            guard useSMAppService else { return }
+            objectWillChange.send()
+            do {
+                if newValue {
+                    try SMAppService.mainApp.register()
+                } else {
+                    try SMAppService.mainApp.unregister()
+                }
+            } catch {
+                // Registration can fail if the user denied in System Settings.
+                // The toggle will revert on next read since we query live status.
+                print("[SettingsManager] Launch at login \(newValue ? "register" : "unregister") failed: \(error)")
+            }
+        }
+    }
+
     // MARK: - Init
 
     init() {
         self.defaults = .standard
         self.useKeychainForApiKey = true
+        self.useSMAppService = true
         self.databasePath = UserDefaults.standard.string(forKey: Keys.databasePath)
             ?? Self.defaultDatabasePath
         self.syncEnabled = UserDefaults.standard.bool(forKey: Keys.syncEnabled)
@@ -168,6 +199,7 @@ final class SettingsManager: ObservableObject {
     init(defaults: UserDefaults, defaultPath: String? = nil) {
         self.defaults = defaults
         self.useKeychainForApiKey = false
+        self.useSMAppService = false
         self.databasePath = defaults.string(forKey: Keys.databasePath)
             ?? defaultPath
             ?? Self.defaultDatabasePath

@@ -48,6 +48,12 @@ struct SettingsView: View {
             Label("General", systemImage: "switch.2")
                 .font(.headline)
 
+            Toggle("Launch at login", isOn: Binding(
+                get: { viewModel.launchAtLogin },
+                set: { viewModel.launchAtLogin = $0 }
+            ))
+            .toggleStyle(.switch)
+
             Toggle("Auto-start tracking on launch", isOn: $viewModel.autoStartTracking)
                 .toggleStyle(.switch)
 

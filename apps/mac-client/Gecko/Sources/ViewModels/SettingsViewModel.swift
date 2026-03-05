@@ -53,6 +53,16 @@ final class SettingsViewModel: ObservableObject {
         }
     }
 
+    /// Whether the app should launch at macOS login (bound to toggle).
+    /// Reads/writes directly through SettingsManager → SMAppService.
+    var launchAtLogin: Bool {
+        get { settingsManager.launchAtLogin }
+        set {
+            objectWillChange.send()
+            settingsManager.launchAtLogin = newValue
+        }
+    }
+
     // MARK: - Sync Service State (read-only, forwarded from SyncService)
 
     /// Current sync status from SyncService.
