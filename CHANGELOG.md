@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] - 2026-03-06
+
+### Mac Client
+
+#### Added
+- **Launch at login**: New toggle in Settings → General to start Gecko automatically at macOS login, backed by `SMAppService` (system-managed, no UserDefaults needed)
+
+### Web Dashboard
+
+#### Added
+- **Integrations & API page**: Endpoint display, API key management (create, list, rename, revoke), and test panel
+- **Public API**: `GET /api/v1/snapshot` with Bearer token authentication
+- **E2E test suite**: 11 API E2E tests covering sync status, apps CRUD, timezone settings, stats/timeline, public API, and API key lifecycle
+- **BDD E2E tests**: 21 Playwright browser tests for all core user flows
+- **Four-layer testing infrastructure**: UT + Lint (pre-commit) + API E2E (pre-push) + BDD E2E (on-demand)
+
+#### Changed
+- Sidebar reorganized into Overview, Data, Integrations, Settings sections
+- "Backup" renamed to "Backy" across sidebar, page title, and breadcrumb
+- ESLint upgraded to strict preset with zero-tolerance warnings
+- SwiftLint upgraded to `--strict` mode for zero-tolerance warnings
+- E2E port convention standardized: 17028 (L3 API), 27028 (L4 BDD)
+
+#### Fixed
+- Port handling and clean shutdown for dev/E2E servers
+- E2E test payloads aligned with current sync API contract and Backy masking
+- Pre-push hook correctly sets `E2E_FAILED` variable for proper server cleanup
+
 ## [1.1.3] - 2026-03-02
 
 ### Web Dashboard
