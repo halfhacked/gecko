@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Bot, Save, Plug, Loader2, Check, X } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Bot, Save, Plug, Loader2, Check, X, FileText, RotateCcw, Plus, AlertTriangle, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,13 @@ import {
   type AiProvider,
   type SdkType,
 } from "@/services/ai";
+import {
+  DEFAULT_PROMPT_SECTION_1,
+  DEFAULT_PROMPT_SECTION_2,
+  DEFAULT_PROMPT_SECTION_3,
+  DEFAULT_PROMPT_SECTION_4,
+  PROMPT_TEMPLATE_VARIABLES,
+} from "@/services/prompt-defaults";
 
 interface AiSettings {
   provider: AiProvider | "";
@@ -440,6 +447,319 @@ export function AiSettingsSection() {
             {testError}
           </Badge>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Prompt Template Section
+// ---------------------------------------------------------------------------
+
+const SECTION_META = [
+  {
+    key: "section1" as const,
+    label: "Role & Context",
+    description: "Define the AI's role and overall task.",
+    default: DEFAULT_PROMPT_SECTION_1,
+    hasVariables: false,
+  },
+  {
+    key: "section2" as const,
+    label: "Data Injection",
+    description: "Data fed to the AI. Use {{variable}} to insert dynamic values.",
+    default: DEFAULT_PROMPT_SECTION_2,
+    hasVariables: true,
+  },
+  {
+    key: "section3" as const,
+    label: "Analysis Rules",
+    description: "Instructions for how the AI should analyze the data.",
+    default: DEFAULT_PROMPT_SECTION_3,
+    hasVariables: false,
+  },
+  {
+    key: "section4" as const,
+    label: "Output Format",
+    description: "Specify the structure of the AI's response.",
+    default: DEFAULT_PROMPT_SECTION_4,
+    hasVariables: false,
+    warning: "Modifying the output format may cause analysis results to display incorrectly.",
+  },
+] as const;
+
+type SectionKey = "section1" | "section2" | "section3" | "section4";
+
+interface PromptSections {
+  section1: string;
+  section2: string;
+  section3: string;
+  section4: string;
+}
+
+/** Insert text at the cursor position of a textarea. */
+function insertAtCursor(textarea: HTMLTextAreaElement, text: string) {
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const before = textarea.value.slice(0, start);
+  const after = textarea.value.slice(end);
+  const newValue = before + text + after;
+  // We need to set value via native setter to trigger React's onChange
+  const nativeSet = Object.getOwnPropertyDescriptor(
+    HTMLTextAreaElement.prototype,
+    "value",
+  )?.set;
+  nativeSet?.call(textarea, newValue);
+  textarea.dispatchEvent(new Event("input", { bubbles: true }));
+  // Restore cursor position after the inserted text
+  requestAnimationFrame(() => {
+    textarea.selectionStart = textarea.selectionEnd = start + text.length;
+    textarea.focus();
+  });
+}
+
+export function PromptTemplateSection() {
+  const [sections, setSections] = useState<PromptSections>({
+    section1: "",
+    section2: "",
+    section3: "",
+    section4: "",
+  });
+  const [loaded, setLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState(false);
+
+  const textareaRefs = useRef<Record<SectionKey, HTMLTextAreaElement | null>>({
+    section1: null,
+    section2: null,
+    section3: null,
+    section4: null,
+  });
+
+  // Load prompt sections on mount
+  useEffect(() => {
+    fetch("/api/settings/ai")
+      .then((r) => r.json())
+      .then((data: { promptSection1: string; promptSection2: string; promptSection3: string; promptSection4: string }) => {
+        setSections({
+          section1: data.promptSection1 || "",
+          section2: data.promptSection2 || "",
+          section3: data.promptSection3 || "",
+          section4: data.promptSection4 || "",
+        });
+        setLoaded(true);
+      })
+      .catch(() => setLoaded(true));
+  }, []);
+
+  /** Get the display value for a section (show default as placeholder content when empty). */
+  const getDisplayValue = useCallback(
+    (key: SectionKey) => sections[key],
+    [sections],
+  );
+
+  const getPlaceholder = useCallback(
+    (key: SectionKey) => {
+      const meta = SECTION_META.find((m) => m.key === key)!;
+      return meta.default;
+    },
+    [],
+  );
+
+  const handleChange = useCallback((key: SectionKey, value: string) => {
+    setSections((prev) => ({ ...prev, [key]: value }));
+    setDirty(true);
+  }, []);
+
+  const handleSave = useCallback(async () => {
+    setSaving(true);
+    setSaved(false);
+    try {
+      const res = await fetch("/api/settings/ai", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          promptSection1: sections.section1,
+          promptSection2: sections.section2,
+          promptSection3: sections.section3,
+          promptSection4: sections.section4,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSections({
+          section1: data.promptSection1 || "",
+          section2: data.promptSection2 || "",
+          section3: data.promptSection3 || "",
+          section4: data.promptSection4 || "",
+        });
+        setSaved(true);
+        setDirty(false);
+        setTimeout(() => setSaved(false), 2000);
+      }
+    } finally {
+      setSaving(false);
+    }
+  }, [sections]);
+
+  const handleResetAll = useCallback(() => {
+    setSections({
+      section1: "",
+      section2: "",
+      section3: "",
+      section4: "",
+    });
+    setDirty(true);
+  }, []);
+
+  const handleInsertVariable = useCallback((variableKey: string) => {
+    const textarea = textareaRefs.current.section2;
+    if (textarea) {
+      insertAtCursor(textarea, `{{${variableKey}}}`);
+    }
+    setOpenDropdown(false);
+  }, []);
+
+  // Check if any section has custom content
+  const hasCustomContent = sections.section1 || sections.section2 || sections.section3 || sections.section4;
+
+  if (!loaded) {
+    return (
+      <div className="rounded-2xl bg-secondary p-5">
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl bg-secondary p-5">
+      {/* Header */}
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary">
+            <FileText className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
+          </div>
+          <div>
+            <h2 className="text-sm font-medium text-foreground">
+              Prompt Template
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Customize the AI analysis prompt. Leave empty to use defaults.
+            </p>
+          </div>
+        </div>
+        {hasCustomContent && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleResetAll}
+            className="gap-1.5 text-xs text-muted-foreground"
+          >
+            <RotateCcw className="h-3 w-3" />
+            Reset All
+          </Button>
+        )}
+      </div>
+
+      {/* Section editors */}
+      <div className="space-y-4">
+        {SECTION_META.map((meta) => (
+          <div key={meta.key}>
+            {/* Section header */}
+            <div className="mb-1.5 flex items-center justify-between">
+              <div>
+                <Label className="text-sm">{meta.label}</Label>
+                <p className="text-xs text-muted-foreground">{meta.description}</p>
+              </div>
+              {/* Variable insertion dropdown — only for section2 */}
+              {meta.hasVariables && (
+                <div className="relative">
+                  <Button
+                    variant="outline"
+                    size="xs"
+                    onClick={() => setOpenDropdown(!openDropdown)}
+                    className="gap-1"
+                  >
+                    <Plus className="h-3 w-3" />
+                    Insert Variable
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                  {openDropdown && (
+                    <>
+                      {/* Backdrop */}
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setOpenDropdown(false)}
+                      />
+                      {/* Dropdown menu */}
+                      <div className="absolute right-0 top-full z-50 mt-1 max-h-64 w-72 overflow-auto rounded-lg border bg-background p-1 shadow-lg">
+                        {PROMPT_TEMPLATE_VARIABLES.map((v) => (
+                          <button
+                            key={v.key}
+                            type="button"
+                            onClick={() => handleInsertVariable(v.key)}
+                            className="flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent"
+                          >
+                            <code className="shrink-0 rounded bg-secondary px-1 py-0.5 font-mono text-[10px]">
+                              {`{{${v.key}}}`}
+                            </code>
+                            <span className="min-w-0">
+                              <span className="text-foreground">{v.description}</span>
+                              <span className="block truncate text-muted-foreground">
+                                e.g. {v.example}
+                              </span>
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Warning for section4 */}
+            {"warning" in meta && meta.warning && (
+              <div className="mb-1.5 flex items-start gap-1.5 rounded-md bg-amber-500/10 px-2.5 py-1.5 text-xs text-amber-600 dark:text-amber-400">
+                <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+                <span>{meta.warning}</span>
+              </div>
+            )}
+
+            {/* Textarea */}
+            <textarea
+              ref={(el) => { textareaRefs.current[meta.key] = el; }}
+              value={getDisplayValue(meta.key)}
+              onChange={(e) => handleChange(meta.key, e.target.value)}
+              placeholder={getPlaceholder(meta.key)}
+              rows={meta.key === "section2" ? 12 : meta.key === "section4" ? 8 : 4}
+              className="w-full resize-y rounded-lg border bg-background px-3 py-2 font-mono text-xs leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Save button */}
+      <div className="mt-4 flex items-center gap-2">
+        <Button
+          onClick={handleSave}
+          disabled={saving || !dirty}
+          className="gap-2"
+          size="sm"
+        >
+          {saving ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : saved ? (
+            <Check className="h-3.5 w-3.5" />
+          ) : (
+            <Save className="h-3.5 w-3.5" strokeWidth={1.5} />
+          )}
+          {saved ? "Saved" : "Save Prompt"}
+        </Button>
       </div>
     </div>
   );

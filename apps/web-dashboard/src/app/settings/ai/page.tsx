@@ -1,7 +1,8 @@
 "use client";
 
 import { AppShell } from "@/components/layout";
-import { AiSettingsSection } from "@/components/ai-settings";
+import { AiSettingsSection, PromptTemplateSection } from "@/components/ai-settings";
+import { Separator } from "@/components/ui/separator";
 
 export default function AiSettingsPage() {
   return (
@@ -20,6 +21,10 @@ export default function AiSettingsPage() {
         </div>
 
         <AiSettingsSection />
+
+        <Separator />
+
+        <PromptTemplateSection />
       </div>
     </AppShell>
   );
