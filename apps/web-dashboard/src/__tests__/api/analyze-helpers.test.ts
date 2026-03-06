@@ -503,15 +503,80 @@ describe("parseAiResponse", () => {
 });
 
 // ---------------------------------------------------------------------------
+// expandTemplate
+// ---------------------------------------------------------------------------
+
+describe("expandTemplate", () => {
+  let expandTemplate: (template: string, vars: Record<string, string>) => string;
+
+  beforeEach(async () => {
+    const mod = await import("../../app/api/daily/[date]/analyze/route");
+    expandTemplate = mod._expandTemplate;
+  });
+
+  test("replaces simple variables", () => {
+    const result = expandTemplate("Hello {{name}}", { name: "World" });
+    expect(result).toBe("Hello World");
+  });
+
+  test("replaces dotted variables", () => {
+    const result = expandTemplate("Score: {{scores.focus}}/100", { "scores.focus": "75" });
+    expect(result).toBe("Score: 75/100");
+  });
+
+  test("replaces multiple variables", () => {
+    const result = expandTemplate("{{a}} and {{b}}", { a: "X", b: "Y" });
+    expect(result).toBe("X and Y");
+  });
+
+  test("replaces same variable appearing multiple times", () => {
+    const result = expandTemplate("{{x}} + {{x}}", { x: "1" });
+    expect(result).toBe("1 + 1");
+  });
+
+  test("leaves unknown variables as-is", () => {
+    const result = expandTemplate("{{known}} and {{unknown}}", { known: "OK" });
+    expect(result).toBe("OK and {{unknown}}");
+  });
+
+  test("handles empty vars map", () => {
+    const result = expandTemplate("{{a}} text", {});
+    expect(result).toBe("{{a}} text");
+  });
+
+  test("handles template with no variables", () => {
+    const result = expandTemplate("plain text", { a: "1" });
+    expect(result).toBe("plain text");
+  });
+
+  test("handles empty template", () => {
+    const result = expandTemplate("", { a: "1" });
+    expect(result).toBe("");
+  });
+
+  test("handles multiline template", () => {
+    const result = expandTemplate("Line1: {{a}}\nLine2: {{b}}", { a: "X", b: "Y" });
+    expect(result).toBe("Line1: X\nLine2: Y");
+  });
+
+  test("handles variable value with special regex chars", () => {
+    const result = expandTemplate("{{url}}", { url: "https://example.com?a=1&b=2" });
+    expect(result).toBe("https://example.com?a=1&b=2");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // buildPrompt
 // ---------------------------------------------------------------------------
 
 describe("buildPrompt", () => {
+  type CustomPromptSections = import("../../app/api/daily/[date]/analyze/route").CustomPromptSections;
   let buildPrompt: (
     date: string,
     stats: import("../../services/daily-stats").DailyStats,
     appContext: Map<string, { bundleId: string; categoryTitle?: string; tags: string[]; note?: string }>,
     tz: string,
+    custom?: CustomPromptSections,
   ) => string;
 
   beforeEach(async () => {
@@ -591,5 +656,73 @@ describe("buildPrompt", () => {
     const result = buildPrompt("2026-02-27", makeStats(), new Map(), "Asia/Shanghai");
     expect(result).toContain("JSON");
     expect(result.length).toBeGreaterThan(100);
+  });
+
+  // --- Custom prompt sections tests ---
+
+  test("uses custom section1 when provided", () => {
+    const custom = { section1: "You are a custom analyst." };
+    const result = buildPrompt("2026-02-27", makeStats(), new Map(), "Asia/Shanghai", custom);
+    expect(result).toContain("You are a custom analyst.");
+    expect(result).not.toContain("你是一位专业的生产力分析师");
+  });
+
+  test("uses custom section2 with template expansion", () => {
+    const custom = { section2: "Date: {{date}}, Apps: {{totalApps}}" };
+    const result = buildPrompt("2026-02-27", makeStats(), new Map(), "Asia/Shanghai", custom);
+    expect(result).toContain("Date: 2026-02-27, Apps: 5");
+    // Should NOT contain default section 2 content
+    expect(result).not.toContain("数据概览");
+  });
+
+  test("uses custom section3 when provided", () => {
+    const custom = { section3: "Custom analysis rules here." };
+    const result = buildPrompt("2026-02-27", makeStats(), new Map(), "Asia/Shanghai", custom);
+    expect(result).toContain("Custom analysis rules here.");
+    expect(result).not.toContain("loginwindow / ScreenSaver 等闲置进程");
+  });
+
+  test("uses custom section4 when provided", () => {
+    const custom = { section4: "Return a simple text summary." };
+    const result = buildPrompt("2026-02-27", makeStats(), new Map(), "Asia/Shanghai", custom);
+    expect(result).toContain("Return a simple text summary.");
+    expect(result).not.toContain("只返回 JSON");
+  });
+
+  test("mixes custom and default sections", () => {
+    const custom = { section1: "Custom role.", section3: "Custom rules." };
+    const result = buildPrompt("2026-02-27", makeStats(), new Map(), "Asia/Shanghai", custom);
+    // Custom sections
+    expect(result).toContain("Custom role.");
+    expect(result).toContain("Custom rules.");
+    // Default sections (section2 and section4 should remain default)
+    expect(result).toContain("60 分钟"); // default section2 expanded
+    expect(result).toContain("只返回 JSON"); // default section4
+  });
+
+  test("falls back to defaults when custom sections are empty strings", () => {
+    const custom = { section1: "", section2: "" };
+    const result = buildPrompt("2026-02-27", makeStats(), new Map(), "Asia/Shanghai", custom);
+    // Should use defaults since empty strings are falsy
+    expect(result).toContain("你是一位专业的生产力分析师");
+    expect(result).toContain("60 分钟");
+  });
+
+  test("custom section2 expands all score variables", () => {
+    const custom = { section2: "F:{{scores.focus}} D:{{scores.deepWork}} S:{{scores.switchRate}} C:{{scores.concentration}} O:{{scores.overall}}" };
+    const result = buildPrompt("2026-02-27", makeStats(), new Map(), "Asia/Shanghai", custom);
+    expect(result).toContain("F:70 D:60 S:80 C:75 O:71");
+  });
+
+  test("custom section2 unknown variables are left as-is", () => {
+    const custom = { section2: "{{date}} and {{unknownVar}}" };
+    const result = buildPrompt("2026-02-27", makeStats(), new Map(), "Asia/Shanghai", custom);
+    expect(result).toContain("2026-02-27 and {{unknownVar}}");
+  });
+
+  test("uses default when custom is undefined", () => {
+    const result = buildPrompt("2026-02-27", makeStats(), new Map(), "Asia/Shanghai", undefined);
+    expect(result).toContain("你是一位专业的生产力分析师");
+    expect(result).toContain("只返回 JSON");
   });
 });
