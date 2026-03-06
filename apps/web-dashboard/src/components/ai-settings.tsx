@@ -538,35 +538,21 @@ export function PromptTemplateSection() {
     section4: null,
   });
 
-  // Load prompt sections on mount
+  // Load prompt sections on mount — empty from API means "use default"
   useEffect(() => {
     fetch("/api/settings/ai")
       .then((r) => r.json())
       .then((data: { promptSection1: string; promptSection2: string; promptSection3: string; promptSection4: string }) => {
         setSections({
-          section1: data.promptSection1 || "",
-          section2: data.promptSection2 || "",
-          section3: data.promptSection3 || "",
-          section4: data.promptSection4 || "",
+          section1: data.promptSection1 || DEFAULT_PROMPT_SECTION_1,
+          section2: data.promptSection2 || DEFAULT_PROMPT_SECTION_2,
+          section3: data.promptSection3 || DEFAULT_PROMPT_SECTION_3,
+          section4: data.promptSection4 || DEFAULT_PROMPT_SECTION_4,
         });
         setLoaded(true);
       })
       .catch(() => setLoaded(true));
   }, []);
-
-  /** Get the display value for a section (show default as placeholder content when empty). */
-  const getDisplayValue = useCallback(
-    (key: SectionKey) => sections[key],
-    [sections],
-  );
-
-  const getPlaceholder = useCallback(
-    (key: SectionKey) => {
-      const meta = SECTION_META.find((m) => m.key === key)!;
-      return meta.default;
-    },
-    [],
-  );
 
   const handleChange = useCallback((key: SectionKey, value: string) => {
     setSections((prev) => ({ ...prev, [key]: value }));
@@ -577,23 +563,25 @@ export function PromptTemplateSection() {
     setSaving(true);
     setSaved(false);
     try {
+      // Send empty string when content matches default (tells API to delete override)
+      const toPayload = (value: string, def: string) => value === def ? "" : value;
       const res = await fetch("/api/settings/ai", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          promptSection1: sections.section1,
-          promptSection2: sections.section2,
-          promptSection3: sections.section3,
-          promptSection4: sections.section4,
+          promptSection1: toPayload(sections.section1, DEFAULT_PROMPT_SECTION_1),
+          promptSection2: toPayload(sections.section2, DEFAULT_PROMPT_SECTION_2),
+          promptSection3: toPayload(sections.section3, DEFAULT_PROMPT_SECTION_3),
+          promptSection4: toPayload(sections.section4, DEFAULT_PROMPT_SECTION_4),
         }),
       });
       if (res.ok) {
         const data = await res.json();
         setSections({
-          section1: data.promptSection1 || "",
-          section2: data.promptSection2 || "",
-          section3: data.promptSection3 || "",
-          section4: data.promptSection4 || "",
+          section1: data.promptSection1 || DEFAULT_PROMPT_SECTION_1,
+          section2: data.promptSection2 || DEFAULT_PROMPT_SECTION_2,
+          section3: data.promptSection3 || DEFAULT_PROMPT_SECTION_3,
+          section4: data.promptSection4 || DEFAULT_PROMPT_SECTION_4,
         });
         setSaved(true);
         setDirty(false);
@@ -604,13 +592,9 @@ export function PromptTemplateSection() {
     }
   }, [sections]);
 
-  const handleResetAll = useCallback(() => {
-    setSections({
-      section1: "",
-      section2: "",
-      section3: "",
-      section4: "",
-    });
+  const handleResetSection = useCallback((key: SectionKey) => {
+    const meta = SECTION_META.find((m) => m.key === key)!;
+    setSections((prev) => ({ ...prev, [key]: meta.default }));
     setDirty(true);
   }, []);
 
@@ -621,9 +605,6 @@ export function PromptTemplateSection() {
     }
     setOpenDropdown(false);
   }, []);
-
-  // Check if any section has custom content
-  const hasCustomContent = sections.section1 || sections.section2 || sections.section3 || sections.section4;
 
   if (!loaded) {
     return (
@@ -638,31 +619,18 @@ export function PromptTemplateSection() {
   return (
     <div className="rounded-2xl bg-secondary p-5">
       {/* Header */}
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary">
-            <FileText className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
-          </div>
-          <div>
-            <h2 className="text-sm font-medium text-foreground">
-              Prompt Template
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              Customize the AI analysis prompt. Leave empty to use defaults.
-            </p>
-          </div>
+      <div className="mb-4 flex items-center gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary">
+          <FileText className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
         </div>
-        {hasCustomContent && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleResetAll}
-            className="gap-1.5 text-xs text-muted-foreground"
-          >
-            <RotateCcw className="h-3 w-3" />
-            Reset All
-          </Button>
-        )}
+        <div>
+          <h2 className="text-sm font-medium text-foreground">
+            Prompt Template
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            Customize the AI analysis prompt.
+          </p>
+        </div>
       </div>
 
       {/* Section editors */}
@@ -675,51 +643,65 @@ export function PromptTemplateSection() {
                 <Label className="text-sm">{meta.label}</Label>
                 <p className="text-xs text-muted-foreground">{meta.description}</p>
               </div>
-              {/* Variable insertion dropdown — only for section2 */}
-              {meta.hasVariables && (
-                <div className="relative">
+              <div className="flex items-center gap-1">
+                {/* Per-section reset — only show when content differs from default */}
+                {sections[meta.key] !== meta.default && (
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="xs"
-                    onClick={() => setOpenDropdown(!openDropdown)}
-                    className="gap-1"
+                    onClick={() => handleResetSection(meta.key)}
+                    className="gap-1 text-xs text-muted-foreground"
                   >
-                    <Plus className="h-3 w-3" />
-                    Insert Variable
-                    <ChevronDown className="h-3 w-3" />
+                    <RotateCcw className="h-3 w-3" />
+                    Reset
                   </Button>
-                  {openDropdown && (
-                    <>
-                      {/* Backdrop */}
-                      <div
-                        className="fixed inset-0 z-40"
-                        onClick={() => setOpenDropdown(false)}
-                      />
-                      {/* Dropdown menu */}
-                      <div className="absolute right-0 top-full z-50 mt-1 max-h-64 w-72 overflow-auto rounded-lg border bg-background p-1 shadow-lg">
-                        {PROMPT_TEMPLATE_VARIABLES.map((v) => (
-                          <button
-                            key={v.key}
-                            type="button"
-                            onClick={() => handleInsertVariable(v.key)}
-                            className="flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent"
-                          >
-                            <code className="shrink-0 rounded bg-secondary px-1 py-0.5 font-mono text-[10px]">
-                              {`{{${v.key}}}`}
-                            </code>
-                            <span className="min-w-0">
-                              <span className="text-foreground">{v.description}</span>
-                              <span className="block truncate text-muted-foreground">
-                                e.g. {v.example}
+                )}
+                {/* Variable insertion dropdown — only for section2 */}
+                {meta.hasVariables && (
+                  <div className="relative">
+                    <Button
+                      variant="outline"
+                      size="xs"
+                      onClick={() => setOpenDropdown(!openDropdown)}
+                      className="gap-1"
+                    >
+                      <Plus className="h-3 w-3" />
+                      Insert Variable
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
+                    {openDropdown && (
+                      <>
+                        {/* Backdrop */}
+                        <div
+                          className="fixed inset-0 z-40"
+                          onClick={() => setOpenDropdown(false)}
+                        />
+                        {/* Dropdown menu */}
+                        <div className="absolute right-0 top-full z-50 mt-1 max-h-64 w-72 overflow-auto rounded-lg border bg-background p-1 shadow-lg">
+                          {PROMPT_TEMPLATE_VARIABLES.map((v) => (
+                            <button
+                              key={v.key}
+                              type="button"
+                              onClick={() => handleInsertVariable(v.key)}
+                              className="flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent"
+                            >
+                              <code className="shrink-0 rounded bg-secondary px-1 py-0.5 font-mono text-[10px]">
+                                {`{{${v.key}}}`}
+                              </code>
+                              <span className="min-w-0">
+                                <span className="text-foreground">{v.description}</span>
+                                <span className="block truncate text-muted-foreground">
+                                  e.g. {v.example}
+                                </span>
                               </span>
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Warning for section4 */}
@@ -730,14 +712,13 @@ export function PromptTemplateSection() {
               </div>
             )}
 
-            {/* Textarea */}
+            {/* Textarea — shows actual text (default or custom) */}
             <textarea
               ref={(el) => { textareaRefs.current[meta.key] = el; }}
-              value={getDisplayValue(meta.key)}
+              value={sections[meta.key]}
               onChange={(e) => handleChange(meta.key, e.target.value)}
-              placeholder={getPlaceholder(meta.key)}
               rows={meta.key === "section2" ? 12 : meta.key === "section4" ? 8 : 4}
-              className="w-full resize-y rounded-lg border bg-background px-3 py-2 font-mono text-xs leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
+              className="w-full resize-y rounded-lg border bg-background px-3 py-2 font-mono text-xs leading-relaxed text-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
         ))}
