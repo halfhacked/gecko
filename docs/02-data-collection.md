@@ -8,12 +8,41 @@ The macOS client collects focus session data by monitoring which application and
 
 | File | Role |
 |---|---|
-| `TrackingEngine.swift` | Core engine: event observation, AX reads, session lifecycle |
+| `TrackingEngine.swift` | Core state machine: event observation, AX reads, session lifecycle |
+| `TrackingEngine+Observers.swift` | System event observers (lock, sleep, wake, power state) |
+| `TrackingEngine+WindowContext.swift` | Accessibility API window context reading |
 | `BrowserURLFetcher.swift` | Browser detection, AppleScript execution, URL/tab parsing |
 | `FocusSession.swift` | Data model (13 fields), GRDB persistence |
 | `DatabaseManager.swift` | SQLite read/write via GRDB `DatabaseQueue` |
 | `PermissionManager.swift` | Accessibility + Automation permission management |
-| `TrackingViewModel.swift` | Thin binding layer between engine and SwiftUI views |
+| `TrackingViewModel.swift` | Tracking status and permissions binding for SwiftUI |
+| `SessionListViewModel.swift` | Recent sessions list via Combine subscription |
+
+---
+
+## State Machine Architecture
+
+`TrackingEngine` uses a formal `TrackingState` enum replacing ad-hoc boolean flags. All state transitions go through `transition(to:)`, which co-locates side effects (timer start/stop, session finalization).
+
+```
+TrackingState:
+    .stopped  ──start()──>  .active
+    .active   ──idle >60s──>  .idle
+    .idle     ──input detected──>  .active
+    .active   ──screen lock──>  .locked
+    .locked   ──unlock──>  .active
+    .active/.locked  ──sleep──>  .asleep
+    .asleep   ──wake──>  .active
+    any state ──stop()──>  .stopped
+```
+
+| State | Timer | Polling | Session |
+|---|---|---|---|
+| `.stopped` | cancelled | none | finalized |
+| `.active` | running | adaptive 3s/6s/12s | active |
+| `.idle` | running | skips expensive work | finalized |
+| `.locked` | suspended | none | finalized |
+| `.asleep` | cancelled | none | finalized |
 
 ---
 
@@ -29,29 +58,63 @@ Subscribes to `NSWorkspace.didActivateApplicationNotification` to detect **app-l
 NSWorkspace.didActivateApplicationNotification
     -> handleAppActivation()
         -> extract NSRunningApplication from notification.userInfo
-        -> read all context (window title, URL, document path, etc.)
+        -> readWindowContext(for: pid) -> WindowContext struct
+        -> fetch browser URL if applicable (AppleScript)
         -> switchFocus() -> finalize old session, start new session
 ```
 
-### 2. Fallback timer: 3-second polling
+### 2. Adaptive fallback timer: GCD `DispatchSourceTimer`
 
-A repeating timer at 3-second intervals detects **in-app context changes** that don't fire workspace notifications:
+A GCD timer detects **in-app context changes** that don't fire workspace notifications:
 
 - Browser tab switches (URL changes without app switch)
 - Editor file switches (window title changes without app switch)
 - Any navigation that changes the focused window's title
 
 ```
-Timer (3.0s interval)
+DispatchSourceTimer (adaptive interval)
     -> checkForInAppChanges()
-        -> read current window title + URL
+        -> guard state == .active (skip if idle/locked/asleep)
+        -> check idle: CGEventSource.secondsSinceLastEventType > 60s
+           -> if idle: transition to .idle, return
+        -> readWindowContext(for: pid) -> WindowContext struct
         -> compare with lastWindowTitle / lastURL
-        -> if changed: switchFocus()
+        -> if titleChanged: debounce 2s (title-only changes)
+        -> if urlChanged or appChanged: switchFocus() immediately
+        -> reschedule timer if interval tier changed
 ```
 
-The timer is a **change detector**, not a blind recorder. It only creates a new session when `titleChanged || urlChanged`.
+**Adaptive intervals** — the timer interval increases as context becomes stable:
 
-### 3. Startup capture
+| Tier | Condition | Base Interval |
+|---|---|---|
+| Active | < 30s since last change | 3.0s |
+| Stable | 30s – 5min since last change | 6.0s |
+| Deep Focus | > 5min since last change | 12.0s |
+
+All intervals are multiplied by **1.5×** when macOS Low Power Mode is enabled. Timer leeway is set to 20% of the interval, enabling macOS wake-up coalescing for additional power savings.
+
+### 3. Title change debounce
+
+Title-only changes (same app, same URL, different title) are debounced with a 2-second delay. If the title changes again within 2s, the previous pending change is cancelled. This reduces DB churn from rapid title flickers (e.g. loading spinners, progress indicators).
+
+App switches and URL changes bypass the debounce and trigger `switchFocus()` immediately.
+
+### 4. Idle detection
+
+`CGEventSource.secondsSinceLastEventType` is checked on each timer tick. If >60 seconds since the last keyboard/mouse input, the engine transitions to `.idle` state. The timer continues running but skips expensive AX lookups. When input resumes, the engine transitions back to `.active`.
+
+### 5. System event observers
+
+| Observer | Event | Action |
+|---|---|---|
+| `lockObserver` | `screenIsLocked` | Finalize session, suspend timer |
+| `unlockObserver` | `screenIsUnlocked` | Resume timer, capture focus |
+| `sleepObserver` | `willSleep` | Finalize session, cancel timer |
+| `wakeObserver` | `didWake` | Restart timer, capture focus |
+| `powerStateObserver` | `powerStateDidChange` | Reschedule timer (interval × 1.5 in LPM) |
+
+### 6. Startup capture
 
 On `start()`, the engine immediately captures the current focus state without waiting for the first notification or timer tick.
 
@@ -70,7 +133,18 @@ Each focus session captures 13 fields from four distinct data sources:
 
 ### Source B: Accessibility API (AXUIElement)
 
-All AX reads go through a shared helper that creates an `AXUIElement` from the app's PID via `AXUIElementCreateApplication(pid)`, then reads `kAXFocusedWindowAttribute` to get the focused window.
+All AX reads go through `readWindowContext(for:)` in `TrackingEngine+WindowContext.swift`, which performs a **single focused window lookup** and returns a `WindowContext` struct containing all attributes in one pass:
+
+```swift
+struct WindowContext {
+    let title: String?
+    let documentPath: String?
+    let isFullScreen: Bool
+    let isMinimized: Bool
+}
+```
+
+The method creates an `AXUIElement` from the app's PID via `AXUIElementCreateApplication(pid)`, reads `kAXFocusedWindowAttribute` to get the focused window, then reads all attributes from that single window element.
 
 | Field | AX Attribute | Notes |
 |---|---|---|
@@ -83,7 +157,7 @@ All AX reads go through a shared helper that creates an `AXUIElement` from the a
 
 ### Source C: AppleScript (browser-specific)
 
-For recognized browsers, an AppleScript extracts URL, tab title, and tab count from the frontmost window. Executed on a background thread via `DispatchQueue.global(qos: .userInitiated)` with typical latency of 50-200ms.
+For recognized browsers, an AppleScript extracts URL, tab title, and tab count from the frontmost window. Executed on a background thread. **Non-browser apps skip AppleScript entirely** — the `BrowserURLFetcher.isBrowser(appName:)` guard is checked before any AppleScript work.
 
 | Field | AppleScript Property | Notes |
 |---|---|---|
@@ -149,11 +223,11 @@ Safari differs: uses `current tab` instead of `active tab`, and `name` instead o
          │       FocusSession.start(...)   -> startTime = endTime = now, duration = 0
          │       db.insert(session)        -> persist to local SQLite
          │
-         └── 3. Update state
-                 currentSession = newSession
-                 lastWindowTitle = newTitle
-                 lastURL = newURL
-                 loadRecentSessions()      -> refresh UI via fetchRecent(limit: 50)
+          └── 3. Update state
+                  currentSession = newSession
+                  lastWindowTitle = newTitle
+                  lastURL = newURL
+                  lastChangeTime = now          -> reset adaptive interval tier
 ```
 
 **Active session indicator:** A session is active when `duration == 0 && endTime == startTime`. It has been created but not yet finalized.
@@ -164,7 +238,7 @@ Safari differs: uses `current tab` instead of `active tab`, and `name` instead o
 
 ## Permissions
 
-Two macOS permissions are required, both checked by `PermissionManager` with a 2-second polling timer:
+Two macOS permissions are required, both checked by `PermissionManager` with exponential backoff polling (2s → 5s → 10s → 30s). Polling stops entirely once all permissions are granted.
 
 | Permission | Purpose | Check API | Prompt API |
 |---|---|---|---|
@@ -187,7 +261,10 @@ Two macOS permissions are required, both checked by `PermissionManager` with a 2
 │                                                             │
 │  NSWorkspace ──notification──> TrackingEngine               │
 │                                     │                       │
-│  Timer (3s) ──poll──────────> checkForInAppChanges()        │
+│  GCD Timer (3/6/12s) ──poll──> checkForInAppChanges()       │
+│                                     │                       │
+│  System Events ──────────────> Observers                    │
+│  (lock/unlock/sleep/wake/LPM)  (suspend/resume/cancel)     │
 │                                     │                       │
 │                              ┌──────┴──────┐                │
 │                              │ switchFocus()│                │
@@ -195,8 +272,8 @@ Two macOS permissions are required, both checked by `PermissionManager` with a 2
 │                                     │                       │
 │                    ┌────────────────┼────────────────┐      │
 │                    │                │                │      │
-│              AXUIElement     NSRunningApp      AppleScript  │
-│              (Accessibility)  (System)         (Automation) │
+│            readWindowContext   NSRunningApp      AppleScript  │
+│            (single AX lookup)  (System)     (browsers only)  │
 │                    │                │                │      │
 │                    ▼                ▼                ▼      │
 │              windowTitle       appName            url       │
@@ -209,7 +286,7 @@ Two macOS permissions are required, both checked by `PermissionManager` with a 2
 │                              FocusSession                   │
 │                              (13 fields)                    │
 │                                     │                       │
-│                              DatabaseManager                │
+│                           DatabaseManager (.utility QoS)    │
 │                              (GRDB/SQLite)                  │
 │                                     │                       │
 │                              gecko.sqlite                   │
