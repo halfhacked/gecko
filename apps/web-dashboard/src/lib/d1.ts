@@ -51,32 +51,54 @@ export async function execute(
   const config = getD1Config();
   const url = buildUrl(config);
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${config.apiToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ sql, params }),
-  });
+  // Retry on transient network errors (socket resets, TLS closures).
+  // D1 REST API occasionally drops idle connections.
+  const MAX_RETRIES = 2;
+  let lastError: unknown;
 
-  if (!response.ok) {
-    const text = await response.text().catch(() => "Unknown error");
-    throw new Error(`D1 API error (${response.status}): ${text}`);
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${config.apiToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ sql, params }),
+      });
+
+      if (!response.ok) {
+        const text = await response.text().catch(() => "Unknown error");
+        throw new Error(`D1 API error (${response.status}): ${text}`);
+      }
+
+      const data = (await response.json()) as D1Response;
+
+      if (!data.success || !data.result?.[0]?.success) {
+        const errorMsg =
+          data.errors?.[0]?.message ?? "Unknown D1 error";
+        throw new Error(`D1 query failed: ${errorMsg}`);
+      }
+
+      return {
+        results: data.result[0].results,
+        meta: data.result[0].meta,
+      };
+    } catch (err) {
+      lastError = err;
+      // Only retry on network-level errors (socket reset, TLS closure)
+      const isNetworkError =
+        err instanceof TypeError && err.message === "fetch failed";
+      if (!isNetworkError || attempt === MAX_RETRIES) {
+        throw err;
+      }
+      // Brief backoff before retry
+      await new Promise((r) => setTimeout(r, 100 * (attempt + 1)));
+    }
   }
 
-  const data = (await response.json()) as D1Response;
-
-  if (!data.success || !data.result?.[0]?.success) {
-    const errorMsg =
-      data.errors?.[0]?.message ?? "Unknown D1 error";
-    throw new Error(`D1 query failed: ${errorMsg}`);
-  }
-
-  return {
-    results: data.result[0].results,
-    meta: data.result[0].meta,
-  };
+  // Unreachable, but satisfies TypeScript
+  throw lastError;
 }
 
 /** Execute a SELECT query and return typed results. */
