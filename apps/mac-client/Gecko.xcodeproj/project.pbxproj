@@ -296,7 +296,6 @@
 				};
 			};
 			buildConfigurationList = D62E6523F7FFE12506E9F5BD /* Build configuration list for PBXProject "Gecko" */;
-			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -309,6 +308,7 @@
 				7F6A9745266B101A4EC20522 /* XCRemoteSwiftPackageReference "GRDB.swift" */,
 			);
 			preferredProjectObjectVersion = 77;
+			productRefGroup = 5F43FD838C3FF41C86613CCD /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -406,7 +406,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.3.0;
+				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = ai.hexly.gecko;
 				PRODUCT_NAME = Gecko;
 				SDKROOT = macosx;
@@ -513,7 +513,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.3.0;
+				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = ai.hexly.gecko;
 				PRODUCT_NAME = Gecko;
 				SDKROOT = macosx;

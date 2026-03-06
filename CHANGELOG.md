@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.4.0] - 2026-03-07
+
+### Web Dashboard
+
+#### Added
+- **Custom prompt templates**: Users can now edit the AI analysis prompt from Settings → AI. The prompt is split into 4 sections (Role & Context, Data Injection, Analysis Rules, Output Format), each independently customizable with per-section reset buttons
+- **Template variable system**: Section 2 supports `{{mustache}}` syntax with 14 available variables (date, scores, topApps, timeline, etc.) and an "Insert Variable" dropdown with live examples
+- **Prompt defaults module**: Extracted `@/services/prompt-defaults.ts` as a shared constants module safe for both server and client bundles
+
+#### Changed
+- `buildPrompt()` refactored from hardcoded string concatenation to 4-section template architecture with optional `CustomPromptSections` parameter (backwards compatible)
+- AI settings API (`GET/PUT /api/settings/ai`) extended to read/write `ai.prompt.section{1-4}` keys
+- Analyze route wired to load and apply custom prompt sections from user settings
+
 ## [1.3.0] - 2026-03-06
 
 ### Documentation
