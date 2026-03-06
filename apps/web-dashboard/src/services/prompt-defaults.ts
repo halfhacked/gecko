@@ -74,7 +74,7 @@ export const PROMPT_TEMPLATE_VARIABLES = [
   { key: "scores.switchRate", description: "切换频率评分", example: "80" },
   { key: "scores.concentration", description: "集中度评分", example: "70" },
   { key: "scores.overall", description: "综合评分", example: "71" },
-  { key: "topApps", description: "Top 10 应用列表（多行）", example: "1. VS Code — 120min (8 sessions)\n2. Chrome — 45min (12 sessions)" },
-  { key: "appContext", description: "应用上下文标注（可为空）", example: "## 应用上下文（用户标注）\n..." },
-  { key: "timeline", description: "详细会话时间线（多行）", example: "[09:00] VS Code (30min) — \"main.ts\"" },
+  { key: "topApps", description: "Top 10 应用列表（多行）", example: "1. VS Code — 120min (8 sessions)\n2. Chrome — 45min (12 sessions)\n3. Slack — 20min (5 sessions)" },
+  { key: "appContext", description: "应用上下文标注（可为空）", example: "## 应用上下文（用户标注）\n以下是用户对部分应用的分类、标签和备注说明：\n- **com.google.Chrome** | 分类: 浏览器 | 标签: 工作, 摸鱼\n- **com.tinyspeck.slackmacgap** | 分类: 沟通 | 备注: 团队日常沟通" },
+  { key: "timeline", description: "详细会话时间线（多行）", example: "[09:00] VS Code (30min) — \"main.ts\"\n[09:32] Chrome (5min) — \"Stack Overflow\" | URL: stackoverflow.com/...\n[09:37] loginwindow (15min) [IDLE/锁屏]" },
 ] as const;
