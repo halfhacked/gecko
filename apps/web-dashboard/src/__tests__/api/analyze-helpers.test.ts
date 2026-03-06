@@ -268,7 +268,10 @@ describe("loadAppContext", () => {
 // ---------------------------------------------------------------------------
 
 describe("loadAiSettings", () => {
-  let loadAiSettings: (userId: string) => Promise<{ provider: string; apiKey: string; model: string; baseURL: string; sdkType: string }>;
+  let loadAiSettings: (userId: string) => Promise<{
+    provider: string; apiKey: string; model: string; baseURL: string; sdkType: string;
+    promptSection1: string; promptSection2: string; promptSection3: string; promptSection4: string;
+  }>;
 
   beforeEach(async () => {
     const mod = await import("../../app/api/daily/[date]/analyze/route");
@@ -289,6 +292,10 @@ describe("loadAiSettings", () => {
     expect(result.model).toBe("claude-sonnet-4-20250514");
     expect(result.baseURL).toBe("");
     expect(result.sdkType).toBe("");
+    expect(result.promptSection1).toBe("");
+    expect(result.promptSection2).toBe("");
+    expect(result.promptSection3).toBe("");
+    expect(result.promptSection4).toBe("");
   });
 
   test("returns empty strings when no settings", async () => {
@@ -296,6 +303,22 @@ describe("loadAiSettings", () => {
     const result = await loadAiSettings("u1");
     expect(result.provider).toBe("");
     expect(result.apiKey).toBe("");
+  });
+
+  test("returns custom prompt sections when stored", async () => {
+    mockD1([
+      [
+        { user_id: "u1", key: "ai.provider", value: "anthropic", updated_at: 0 },
+        { user_id: "u1", key: "ai.apiKey", value: "sk-test", updated_at: 0 },
+        { user_id: "u1", key: "ai.prompt.section1", value: "Custom role.", updated_at: 0 },
+        { user_id: "u1", key: "ai.prompt.section3", value: "Custom rules.", updated_at: 0 },
+      ],
+    ]);
+    const result = await loadAiSettings("u1");
+    expect(result.promptSection1).toBe("Custom role.");
+    expect(result.promptSection2).toBe("");
+    expect(result.promptSection3).toBe("Custom rules.");
+    expect(result.promptSection4).toBe("");
   });
 });
 

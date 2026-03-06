@@ -102,6 +102,10 @@ async function loadAiSettings(userId: string) {
     model: map.get("ai.model") ?? "",
     baseURL: map.get("ai.baseURL") ?? "",
     sdkType: map.get("ai.sdkType") ?? "",
+    promptSection1: map.get("ai.prompt.section1") ?? "",
+    promptSection2: map.get("ai.prompt.section2") ?? "",
+    promptSection3: map.get("ai.prompt.section3") ?? "",
+    promptSection4: map.get("ai.prompt.section4") ?? "",
   };
 }
 
@@ -533,7 +537,18 @@ export async function POST(
   }
   const stats = computeDailyStats(date, rows);
   const appContext = await loadAppContext(user.userId);
-  const prompt = buildPrompt(date, stats, appContext, tz);
+
+  // Build custom prompt sections from user settings (empty = use default)
+  const customSections: CustomPromptSections = {};
+  if (settings.promptSection1) customSections.section1 = settings.promptSection1;
+  if (settings.promptSection2) customSections.section2 = settings.promptSection2;
+  if (settings.promptSection3) customSections.section3 = settings.promptSection3;
+  if (settings.promptSection4) customSections.section4 = settings.promptSection4;
+
+  const prompt = buildPrompt(
+    date, stats, appContext, tz,
+    Object.keys(customSections).length > 0 ? customSections : undefined,
+  );
 
   let text: string;
   let usage: { promptTokens?: number; completionTokens?: number; totalTokens?: number } | undefined;
