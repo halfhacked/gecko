@@ -4,7 +4,7 @@
 > **Route**: `/daily/:date` (e.g. `/daily/2026-02-27`)
 
 Left-right split layout: rule-based visualization (left) + AI analysis in Markdown (right).
-Date picker at top (arrow nav + calendar popup). Today is excluded (incomplete data).
+Date picker at top (arrow nav + calendar popup). Today is included — partial data is shown as it accumulates (since v1.1.2). Future dates are rejected. All day boundaries are computed using the user's configured IANA timezone.
 
 ---
 
@@ -25,12 +25,14 @@ Date picker at top (arrow nav + calendar popup). Today is excluded (incomplete d
 
 ## M1: DB Migration — `daily_summaries`
 
+Original migration (`0005_daily_summaries.sql`):
+
 ```sql
 CREATE TABLE IF NOT EXISTS daily_summaries (
   id              TEXT PRIMARY KEY,
   user_id         TEXT NOT NULL,
   date            TEXT NOT NULL,           -- 'YYYY-MM-DD'
-  stats_json      TEXT NOT NULL,           -- rule-based stats snapshot (JSON)
+  stats_json      TEXT NOT NULL,           -- dropped in migration 0007
   ai_score        INTEGER,                -- AI overall score 1-100
   ai_result_json  TEXT,                   -- AI structured output (JSON)
   ai_model        TEXT,                   -- model used
@@ -41,13 +43,15 @@ CREATE TABLE IF NOT EXISTS daily_summaries (
 CREATE UNIQUE INDEX idx_daily_summaries_user_date ON daily_summaries(user_id, date);
 ```
 
+> **Migration 0007** (`0007_drop_stats_json.sql`) removed the `stats_json` column via table rebuild. Stats are always computed fresh from `focus_sessions` using timezone-aware day boundaries. Only AI results are cached in this table.
+
 **Tests**: SQL syntax validation in UT.
 
 ---
 
 ## M2: Daily Stats Service — Scoring Engine
 
-**Input**: All `focus_sessions` for a given user + date range (via D1 query).
+**Input**: All `focus_sessions` for a given user + date range, using **timezone-aware day boundaries** (via the user's configured IANA timezone from `settings` table).
 
 **Output**: `DailyStats` object with scores, top apps, and raw sessions for the Gantt chart.
 
@@ -103,7 +107,7 @@ Stats are always computed fresh from D1 (not cached). Only AI results are cached
 
 ## M4: API GET /api/daily/:date
 
-1. Validate date format (`YYYY-MM-DD`) + reject today or future (in user's timezone).
+1. Validate date format (`YYYY-MM-DD`) + reject future dates (in user's timezone). Today is allowed.
 2. Compute stats fresh from D1 using timezone-aware day boundaries.
 3. Check `daily_summaries` cache for AI result only.
 4. Response: `{ stats: DailyStats, ai: AiResult | null, timezone: string }`.
