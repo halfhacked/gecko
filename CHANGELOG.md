@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] - 2026-03-06
+
+### Documentation
+
+#### Changed
+- **README.md**: Fixed database path (`ai.hexly.gecko`), updated test counts (608 web + 194 mac), four-layer testing architecture, added 10+ missing features (Daily Review, AI analysis, Backy backup, Public API, app notes, timezone settings, launch at login)
+- **Database schema docs**: Added 7 missing cloud tables (categories, app_category_mappings, tags, app_tag_mappings, settings, daily_summaries, app_notes) and 5 missing migrations (v3–v7)
+- **Data collection docs**: Major rewrite — added state machine architecture, adaptive GCD timer (3/6/12s), idle detection, screen lock/sleep observers, title debounce, Low Power Mode awareness, WindowContext single AX lookup
+- **Data sync docs**: Added 18 missing API endpoints (daily review, AI settings, timezone, app notes, Backy ×6, public API, health check), updated test counts, fixed E2E ports
+- **Daily review docs**: Noted `stats_json` column drop (migration 0007), corrected "today excluded" → "today allowed" (v1.1.2), added timezone-aware day boundaries
+- **Testing plan docs**: Updated status table (all phases PASS), fixed ESLint mode (`strict` not `strictTypeChecked`), updated BDD test list, noted BDD is on-demand not pre-push
+
+#### Added
+- **Energy optimization docs**: Added "Status: COMPLETED (v1.0.1)" banners to all three phase documents (phases 1–3)
+
 ## [1.2.0] - 2026-03-06
 
 ### Mac Client
