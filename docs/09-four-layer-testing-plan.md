@@ -1,17 +1,18 @@
 # Four-Layer Testing Improvement Plan
 
 > Execution plan to align Gecko's test infrastructure with the four-layer testing standard.
+> **Status: COMPLETED** (v1.2.0). All three phases are implemented. This document is retained as a design reference.
 
 ## Current Status
 
-| Layer | Standard | Status | Gap |
-|-------|----------|--------|-----|
-| L1: Unit Tests | 90%+ coverage, pre-commit gate | **PASS** | — |
-| L2: Lint | Strict mode, zero tolerance | **PARTIAL** | ESLint not strict; no `--max-warnings 0` |
-| L3: API E2E | 100% REST API coverage, pre-push gate | **PARTIAL** | 9/27 routes uncovered; pre-push silently skips E2E |
-| L4: BDD E2E | Playwright browser tests for core flows | **MISSING** | No Playwright; no browser tests at all |
+| Layer | Standard | Status | Notes |
+|-------|----------|--------|-------|
+| L1: Unit Tests | 90%+ coverage, pre-commit gate | **PASS** | 608 web + 194 mac, pre-commit hook |
+| L2: Lint | Strict mode, zero tolerance | **PASS** | ESLint `strict` + SwiftLint `--strict` |
+| L3: API E2E | 100% REST API coverage, pre-push gate | **PASS** | 11 test files on port 17028, pre-push hook |
+| L4: BDD E2E | Playwright browser tests for core flows | **PASS** | 6 spec files on port 27028, on-demand |
 
-## Phase 1 — Fix Bugs + Lint Upgrade (Critical)
+## Phase 1 — Fix Bugs + Lint Upgrade (Critical) ✓
 
 ### 1.1 Fix pre-push E2E silent skip
 
@@ -23,16 +24,14 @@ so all E2E tests are silently skipped by `describe.skipIf(!process.env.RUN_E2E)`
 - Add E2E dev server auto-start/stop logic to the hook
 - Add port conflict detection (kill stale processes before starting)
 
-### 1.2 ESLint → strictTypeChecked
+### 1.2 ESLint → strict
 
 **Problem**: ESLint uses `tseslint.configs.recommended` (mid-tier). Missing safety rules like
 `no-unsafe-assignment`, `no-unsafe-call`, `no-unsafe-return`, `no-unsafe-member-access`.
 
-**Fix**:
-- `eslint.config.mjs`: switch to `tseslint.configs.strictTypeChecked`
-- Add `parserOptions.projectService: true` for type-aware linting
-- `package.json`: change lint script to `eslint --max-warnings 0`
-- Fix all new violations (expect ~20-50 issues, mostly `any` usage)
+**Fix** (implemented):
+- `eslint.config.mjs`: switched to `tseslint.configs.strict` (not `strictTypeChecked` — decided against type-aware linting for build speed)
+- All violations fixed
 
 ### 1.3 SwiftLint → strict mode
 
@@ -43,7 +42,7 @@ violations but may miss warning-level issues.
 - Pre-push hook: change to `swiftlint lint --strict`
 - Fix any new violations that surface
 
-## Phase 2 — API E2E Completion
+## Phase 2 — API E2E Completion ✓
 
 ### 2.1 Port standardization
 
@@ -94,7 +93,7 @@ Integrate `scripts/e2e-server.sh` into `.husky/pre-push`:
 - Run with `RUN_E2E=true`
 - Auto-stop server after tests
 
-## Phase 3 — BDD E2E (Playwright)
+## Phase 3 — BDD E2E (Playwright) ✓
 
 ### 3.1 Install and configure Playwright
 
@@ -114,15 +113,14 @@ Integrate `scripts/e2e-server.sh` into `.husky/pre-push`:
 | `daily-review.spec.ts` | Navigate to daily review → see timeline → trigger AI analysis |
 | `settings.spec.ts` | Open settings → change timezone → save → verify persisted |
 | `categories.spec.ts` | Create category → add mapping → verify app categorized |
-| `backy.spec.ts` | Configure Backy → trigger backup → verify success state |
+| `tags.spec.ts` | Create tag → assign to app → verify tag displayed |
+| `navigation.spec.ts` | Sidebar navigation → page transitions → URL verification |
 
-### 3.3 Update pre-push hook
+> **Note**: `backy.spec.ts` was originally planned but not implemented. `tags.spec.ts` and `navigation.spec.ts` were added instead.
 
-Add BDD E2E stage after API E2E:
-```
-Stage 3a: API E2E (port 17028)
-Stage 3b: BDD E2E (port 27028, via Playwright)
-```
+### 3.3 BDD E2E integration
+
+> **Decision**: BDD E2E was initially added to the pre-push hook but later removed. BDD tests run on-demand via `bun run test:bdd` to keep push times reasonable. API E2E remains in pre-push.
 
 ### 3.4 Add npm scripts
 
@@ -134,14 +132,14 @@ Stage 3b: BDD E2E (port 27028, via Playwright)
 ## Execution Order
 
 ```
-Phase 1.1  Fix pre-push E2E skip bug          ← CRITICAL BUG
-Phase 1.2  ESLint strictTypeChecked            ← Lint quality gate
-Phase 1.3  SwiftLint --strict                  ← Lint quality gate
-Phase 2.1  Port standardization                ← Foundation for Phase 2-3
-Phase 2.2  E2E server auto-management          ← Pre-push reliability
-Phase 2.3  Fill uncovered API E2E tests        ← API coverage 67%→93%
-Phase 2.4  Update pre-push hook                ← Wire it all together
-Phase 3.1  Install Playwright                  ← BDD foundation
-Phase 3.2  Write BDD tests                     ← Core flow coverage
-Phase 3.3  Update pre-push + scripts           ← Final integration
+Phase 1.1  Fix pre-push E2E skip bug          ✓ Done
+Phase 1.2  ESLint strict                       ✓ Done (strict, not strictTypeChecked)
+Phase 1.3  SwiftLint --strict                  ✓ Done
+Phase 2.1  Port standardization                ✓ Done (17028 / 27028)
+Phase 2.2  E2E server auto-management          ✓ Done (scripts/e2e-server.sh)
+Phase 2.3  Fill uncovered API E2E tests        ✓ Done (11 test files)
+Phase 2.4  Update pre-push hook                ✓ Done
+Phase 3.1  Install Playwright                  ✓ Done
+Phase 3.2  Write BDD tests                     ✓ Done (6 specs, 21 tests)
+Phase 3.3  BDD integration                     ✓ Done (on-demand, not pre-push)
 ```
