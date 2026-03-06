@@ -72,6 +72,7 @@ export async function GET(
         result: JSON.parse(cached.ai_result_json),
         model: cached.ai_model,
         generatedAt: cached.ai_generated_at,
+        prompt: cached.ai_prompt ?? null,
       }
     : null;
 

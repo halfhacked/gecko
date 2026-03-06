@@ -22,6 +22,7 @@ import { ScoreCards } from "@/components/daily/score-cards";
 import {
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Calendar,
   Sparkles,
   Loader2,
@@ -31,6 +32,7 @@ import {
   Zap,
   Info,
   RefreshCw,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DayPicker } from "react-day-picker";
@@ -48,6 +50,7 @@ interface DailyResponse {
     result: AiAnalysisResult;
     model: string;
     generatedAt: string;
+    prompt: string | null;
   } | null;
   /** User's IANA timezone from settings (e.g. "Asia/Shanghai") */
   timezone: string;
@@ -66,6 +69,7 @@ interface AnalyzeResponse {
   provider?: string;
   generatedAt: string;
   cached: boolean;
+  prompt?: string | null;
   usage?: TokenUsage | null;
   durationMs?: number | null;
 }
@@ -264,6 +268,50 @@ function ModelDetailsCard({ ai }: { ai: AnalyzeResponse }) {
 }
 
 // ---------------------------------------------------------------------------
+// Prompt preview card (collapsible)
+// ---------------------------------------------------------------------------
+
+function PromptCard({
+  prompt,
+  collapsed,
+  onToggle,
+}: {
+  prompt: string;
+  collapsed: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <div className="rounded-card bg-secondary overflow-hidden">
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center gap-2 p-4 md:p-5 text-left hover:bg-accent/50 transition-colors"
+      >
+        <FileText className="h-4 w-4 text-muted-foreground shrink-0" strokeWidth={1.5} />
+        <h3 className="text-sm font-normal text-muted-foreground">
+          Prompt
+        </h3>
+        <span className="ml-auto text-[11px] font-medium text-muted-foreground bg-card px-2 py-0.5 rounded-widget">
+          {Math.round(prompt.length / 1000)}k chars
+        </span>
+        <ChevronDown
+          className={`h-4 w-4 text-muted-foreground shrink-0 transition-transform duration-200 ${
+            collapsed ? "-rotate-90" : ""
+          }`}
+          strokeWidth={1.5}
+        />
+      </button>
+      {!collapsed && (
+        <div className="px-4 pb-4 md:px-5 md:pb-5">
+          <pre className="text-xs text-foreground/80 leading-relaxed whitespace-pre-wrap break-words max-h-[400px] overflow-y-auto rounded-widget border border-border bg-card p-3 font-mono">
+            {prompt}
+          </pre>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // AI Analysis panel
 // ---------------------------------------------------------------------------
 
@@ -271,40 +319,61 @@ function AiAnalysisPanel({
   ai,
   loading,
   error,
+  prompt,
+  promptCollapsed,
+  onTogglePrompt,
   onGenerate,
 }: {
   ai: AnalyzeResponse | null;
   loading: boolean;
   error: string | null;
+  prompt: string | null;
+  promptCollapsed: boolean;
+  onTogglePrompt: () => void;
   onGenerate: (force?: boolean) => void;
 }) {
+  // Show prompt card when we have a prompt (either during loading or after result)
+  const promptCard = prompt ? (
+    <PromptCard
+      prompt={prompt}
+      collapsed={promptCollapsed}
+      onToggle={onTogglePrompt}
+    />
+  ) : null;
+
   if (loading) {
     return (
-      <div className="rounded-card bg-secondary p-4 md:p-5 flex flex-col items-center justify-center min-h-[200px]">
-        <Loader2 className="size-6 animate-spin text-muted-foreground mb-2" />
-        <p className="text-sm text-muted-foreground">Analyzing with AI...</p>
+      <div className="space-y-4">
+        {promptCard}
+        <div className="rounded-card bg-secondary p-4 md:p-5 flex flex-col items-center justify-center min-h-[200px]">
+          <Loader2 className="size-6 animate-spin text-muted-foreground mb-2" />
+          <p className="text-sm text-muted-foreground">Analyzing with AI...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="rounded-card bg-secondary p-4 md:p-5">
-        <div className="flex items-center gap-2 mb-2">
-          <AlertCircle className="h-4 w-4 text-destructive" strokeWidth={1.5} />
-          <h3 className="text-sm font-normal text-destructive">
-            Analysis failed
-          </h3>
+      <div className="space-y-4">
+        {promptCard}
+        <div className="rounded-card bg-secondary p-4 md:p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertCircle className="h-4 w-4 text-destructive" strokeWidth={1.5} />
+            <h3 className="text-sm font-normal text-destructive">
+              Analysis failed
+            </h3>
+          </div>
+          <p className="text-sm text-muted-foreground">{error}</p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onGenerate}
+            className="mt-3"
+          >
+            Retry
+          </Button>
         </div>
-        <p className="text-sm text-muted-foreground">{error}</p>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onGenerate}
-          className="mt-3"
-        >
-          Retry
-        </Button>
       </div>
     );
   }
@@ -326,6 +395,9 @@ function AiAnalysisPanel({
 
   return (
     <div className="space-y-4">
+      {/* Prompt card (collapsed when result is available) */}
+      {promptCard}
+
       {/* Main AI content card */}
       <div className="rounded-card bg-secondary p-4 md:p-5">
         <div className="flex items-center gap-2 mb-3">
@@ -464,6 +536,8 @@ export function DailyReviewClient({ date }: { date: string }) {
   const [ai, setAi] = useState<AnalyzeResponse | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [aiPrompt, setAiPrompt] = useState<string | null>(null);
+  const [promptCollapsed, setPromptCollapsed] = useState(false);
 
   // Fetch daily data
   const fetchData = useCallback(async (d: string) => {
@@ -472,6 +546,8 @@ export function DailyReviewClient({ date }: { date: string }) {
       setError(null);
       setAi(null);
       setAiError(null);
+      setAiPrompt(null);
+      setPromptCollapsed(false);
 
       const res = await fetch(`/api/daily/${d}`);
       if (!res.ok) {
@@ -494,6 +570,10 @@ export function DailyReviewClient({ date }: { date: string }) {
           generatedAt: body.ai.generatedAt,
           cached: true,
         });
+        if (body.ai.prompt) {
+          setAiPrompt(body.ai.prompt);
+          setPromptCollapsed(true); // Cached results start collapsed
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
@@ -506,16 +586,38 @@ export function DailyReviewClient({ date }: { date: string }) {
     fetchData(date);
   }, [date, fetchData]);
 
-  // Generate AI analysis
+  // Generate AI analysis — calls preview-prompt (fast) + analyze (slow) in parallel
   const generateAi = useCallback(async (force?: boolean) => {
     try {
       setAiLoading(true);
       setAiError(null);
+      setPromptCollapsed(false); // Expand prompt during loading
 
+      // Fire both requests in parallel:
+      // - preview-prompt returns instantly with the prompt text
+      // - analyze calls the AI provider (slow)
       const qs = force ? "?force=true" : "";
-      const res = await fetch(`/api/daily/${date}/analyze${qs}`, {
+      const promptFetch = fetch(`/api/daily/${date}/preview-prompt`, {
         method: "POST",
       });
+      const analyzeFetch = fetch(`/api/daily/${date}/analyze${qs}`, {
+        method: "POST",
+      });
+
+      // Handle prompt response as soon as it arrives
+      promptFetch
+        .then(async (res) => {
+          if (res.ok) {
+            const body = (await res.json()) as { prompt: string };
+            setAiPrompt(body.prompt);
+          }
+        })
+        .catch(() => {
+          // Non-critical: prompt preview is nice-to-have
+        });
+
+      // Wait for the analyze response
+      const res = await analyzeFetch;
 
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as {
@@ -526,6 +628,11 @@ export function DailyReviewClient({ date }: { date: string }) {
 
       const body = (await res.json()) as AnalyzeResponse;
       setAi(body);
+      // Use prompt from analyze response if preview-prompt didn't return one
+      if (body.prompt) {
+        setAiPrompt(body.prompt);
+      }
+      setPromptCollapsed(true); // Collapse prompt once result arrives
     } catch (err) {
       setAiError(err instanceof Error ? err.message : "AI analysis failed");
     } finally {
@@ -612,6 +719,9 @@ export function DailyReviewClient({ date }: { date: string }) {
                 ai={ai}
                 loading={aiLoading}
                 error={aiError}
+                prompt={aiPrompt}
+                promptCollapsed={promptCollapsed}
+                onTogglePrompt={() => setPromptCollapsed((c) => !c)}
                 onGenerate={generateAi}
               />
             </div>

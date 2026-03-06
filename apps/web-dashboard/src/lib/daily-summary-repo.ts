@@ -19,6 +19,7 @@ export interface DailySummaryRow {
   ai_score: number | null;
   ai_result_json: string | null;
   ai_model: string | null;
+  ai_prompt: string | null;
   ai_generated_at: string | null;
   created_at: string;
   updated_at: string;
@@ -36,7 +37,7 @@ export const dailySummaryRepo = {
   ): Promise<DailySummaryRow | null> {
     const rows = await query<DailySummaryRow>(
       `SELECT id, user_id, date, ai_score, ai_result_json,
-              ai_model, ai_generated_at, created_at, updated_at
+              ai_model, ai_prompt, ai_generated_at, created_at, updated_at
        FROM daily_summaries
        WHERE user_id = ? AND date = ?`,
       [userId, date],
@@ -51,18 +52,20 @@ export const dailySummaryRepo = {
     aiScore: number,
     aiResultJson: string,
     aiModel: string,
+    aiPrompt?: string,
   ): Promise<void> {
     const id = crypto.randomUUID();
     await execute(
-      `INSERT INTO daily_summaries (id, user_id, date, ai_score, ai_result_json, ai_model, ai_generated_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+      `INSERT INTO daily_summaries (id, user_id, date, ai_score, ai_result_json, ai_model, ai_prompt, ai_generated_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
        ON CONFLICT (user_id, date) DO UPDATE SET
          ai_score = excluded.ai_score,
          ai_result_json = excluded.ai_result_json,
          ai_model = excluded.ai_model,
+         ai_prompt = excluded.ai_prompt,
          ai_generated_at = datetime('now'),
          updated_at = datetime('now')`,
-      [id, userId, date, aiScore, aiResultJson, aiModel],
+      [id, userId, date, aiScore, aiResultJson, aiModel, aiPrompt ?? null],
     );
   },
 };

@@ -445,6 +445,7 @@ export async function POST(
         model: cached.ai_model,
         generatedAt: cached.ai_generated_at,
         cached: true,
+        prompt: cached.ai_prompt ?? null,
         // No usage/timing for cached results
         usage: null,
         durationMs: null,
@@ -545,6 +546,7 @@ export async function POST(
       result.score,
       JSON.stringify(result),
       config.model,
+      prompt,
     );
   } catch (err) {
     // Non-fatal: log but still return the result
@@ -558,6 +560,7 @@ export async function POST(
     provider: config.provider,
     generatedAt: new Date().toISOString(),
     cached: false,
+    prompt,
     usage: {
       promptTokens: usage?.promptTokens ?? 0,
       completionTokens: usage?.completionTokens ?? 0,
