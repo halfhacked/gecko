@@ -677,22 +677,22 @@ export function PromptTemplateSection() {
                           onClick={() => setOpenDropdown(false)}
                         />
                         {/* Dropdown menu */}
-                        <div className="absolute right-0 top-full z-50 mt-1 max-h-64 w-72 overflow-auto rounded-lg border bg-background p-1 shadow-lg">
+                        <div className="absolute right-0 top-full z-50 mt-1 max-h-80 w-80 overflow-auto rounded-lg border bg-background p-1 shadow-lg">
                           {PROMPT_TEMPLATE_VARIABLES.map((v) => (
                             <button
                               key={v.key}
                               type="button"
                               onClick={() => handleInsertVariable(v.key)}
-                              className="flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent"
+                              className="flex w-full flex-col gap-0.5 rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent"
                             >
-                              <code className="shrink-0 rounded bg-secondary px-1 py-0.5 font-mono text-[10px]">
-                                {`{{${v.key}}}`}
-                              </code>
-                              <span className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <code className="shrink-0 rounded bg-secondary px-1 py-0.5 font-mono text-[10px]">
+                                  {`{{${v.key}}}`}
+                                </code>
                                 <span className="text-foreground">{v.description}</span>
-                                <span className="block truncate text-muted-foreground">
-                                  e.g. {v.example}
-                                </span>
+                              </div>
+                              <span className="whitespace-pre-wrap pl-1 text-[10px] text-muted-foreground">
+                                e.g. {v.example}
                               </span>
                             </button>
                           ))}
