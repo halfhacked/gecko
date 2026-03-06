@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.5.0] - 2026-03-07
+
+### Web Dashboard
+
+#### Added
+- **AI prompt preview card**: When clicking "Analyze", the full prompt sent to the AI is now displayed as a card that appears instantly and auto-collapses once the AI result arrives. Click to expand/collapse at any time
+- **Prompt persistence**: The AI prompt is stored in `daily_summaries` (new `ai_prompt` column, migration 0008) so users can inspect what data was fed to the model even after the fact
+- **Preview-prompt API**: New lightweight `POST /api/daily/[date]/preview-prompt` endpoint that builds and returns the prompt without calling the AI provider (sub-second response)
+- **D1 retry mechanism**: `execute()` now retries up to 2 times on transient network errors (TLS socket closures from Cloudflare D1 REST API)
+
+#### Changed
+- Analyze API (`POST /api/daily/[date]/analyze`) now returns a `prompt` field in both fresh and cached responses
+- `GET /api/daily/[date]` includes cached `prompt` when available
+- `DailyReviewClient` fires preview-prompt and analyze requests in parallel for optimal UX
+
 ## [1.4.0] - 2026-03-07
 
 ### Web Dashboard
