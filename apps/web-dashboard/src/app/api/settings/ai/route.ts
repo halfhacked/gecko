@@ -20,6 +20,10 @@ async function readAiSettings(userId: string) {
     autoSummarize: map.get("ai.autoSummarize") === "true",
     baseURL: map.get("ai.baseURL") ?? "",
     sdkType: (map.get("ai.sdkType") ?? "") as SdkType | "",
+    promptSection1: map.get("ai.prompt.section1") ?? "",
+    promptSection2: map.get("ai.prompt.section2") ?? "",
+    promptSection3: map.get("ai.prompt.section3") ?? "",
+    promptSection4: map.get("ai.prompt.section4") ?? "",
   };
 }
 
@@ -51,6 +55,10 @@ export async function PUT(request: Request): Promise<Response> {
     autoSummarize?: boolean;
     baseURL?: string;
     sdkType?: string;
+    promptSection1?: string;
+    promptSection2?: string;
+    promptSection3?: string;
+    promptSection4?: string;
   };
   try {
     body = await request.json();
@@ -90,6 +98,24 @@ export async function PUT(request: Request): Promise<Response> {
   }
   if (body.sdkType !== undefined) {
     await settingsRepo.upsert(user.userId, "ai.sdkType", body.sdkType);
+  }
+
+  // Prompt template sections — empty string means "use default"
+  const promptKeys = [
+    ["promptSection1", "ai.prompt.section1"],
+    ["promptSection2", "ai.prompt.section2"],
+    ["promptSection3", "ai.prompt.section3"],
+    ["promptSection4", "ai.prompt.section4"],
+  ] as const;
+  for (const [bodyKey, settingsKey] of promptKeys) {
+    if (body[bodyKey] !== undefined) {
+      if (body[bodyKey]) {
+        await settingsRepo.upsert(user.userId, settingsKey, body[bodyKey]);
+      } else {
+        // Empty string = reset to default, so delete the custom override
+        await settingsRepo.delete(user.userId, settingsKey);
+      }
+    }
   }
 
   const updated = await readAiSettings(user.userId);
