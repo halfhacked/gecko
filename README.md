@@ -28,27 +28,34 @@ Gecko is a lightweight menu bar app that silently tracks which application and w
 - **State machine architecture** — formal `TrackingState` enum (`.stopped`, `.active`, `.idle`, `.locked`, `.asleep`) with explicit transitions and co-located side effects
 - **Energy efficient** — 80-95% power reduction: idle detection (>60s), screen lock/sleep suspension, Low Power Mode awareness (1.5× interval), title change debounce (2s), and timer leeway for macOS wake-up coalescing
 - **Browser URL extraction** — grabs the current URL from Chrome, Safari, Edge, Brave, Arc, and Vivaldi via AppleScript (skipped entirely for non-browser apps)
-- **Local SQLite storage** — all data stays on your machine at `~/Library/Application Support/com.gecko.app/gecko.sqlite`
+- **Local SQLite storage** — all data stays on your machine at `~/Library/Application Support/ai.hexly.gecko/gecko.sqlite`
 - **Cloud sync** — background sync to Cloudflare D1 with network awareness (skips when offline), batched uploads, and watermark-based pagination
 - **Menu bar only** — runs as `LSUIElement` (no Dock icon), always accessible from the menu bar
 - **Permission onboarding** — guides you through granting Accessibility and Automation permissions, with exponential backoff polling
 - **Secure** — API key stored in macOS Keychain, sync requires HTTPS
+- **Launch at login** — optional auto-start via `SMAppService`
 
 ### 🌐 Web Dashboard
 
-- **Screen time analytics** — daily usage breakdown with interactive charts (Recharts)
+- **Screen time analytics** — daily usage breakdown with interactive charts (Recharts), timeline view, and top apps table
+- **Daily Review** — per-day deep dive with score cards, Gantt-style session timeline, and AI-powered analysis (Anthropic / OpenAI)
 - **Cloud sync** — automatic background sync from local SQLite to Cloudflare D1, with batched writes respecting D1's 100-param limit
 - **App Categories** — organize apps into categories (4 built-in defaults + custom). Each category has an icon and a stable hash-derived color
 - **Tags** — flexible tagging system with multi-tag support per app
-- **Google OAuth** — secure authentication via NextAuth v5
+- **App Notes** — annotate apps with context for AI analysis
+- **Public API** — `/api/v1/snapshot` endpoint for external integrations (Bearer token auth)
+- **API key management** — create, rename, and revoke API keys for device sync and public API access
+- **Backy backup** — push/pull cloud data to an external Backy backup service
+- **Timezone settings** — configurable IANA timezone for accurate day boundaries
+- **Google OAuth** — secure authentication via NextAuth v5 (email allowlist)
 - **Dark mode** — system-aware theme switching
 - **Responsive sidebar** — collapsible navigation with smooth CSS grid animations
 
 ### 🛠️ Developer Experience
 
 - **Monorepo** — clean separation between macOS client and web dashboard
-- **Three-layer testing** — Unit Tests (258 web + 259 mac), ESLint, SwiftLint, and E2E integration tests
-- **Husky git hooks** — pre-commit runs UT, pre-push runs UT + Lint + E2E
+- **Four-layer testing** — L1: Unit Tests (608 web + 194 mac), L2: Strict Lint (ESLint + SwiftLint), L3: API E2E, L4: BDD E2E (Playwright)
+- **Husky git hooks** — pre-commit runs UT, pre-push runs UT + Lint + API E2E; BDD E2E available on-demand
 - **Atomic commits** — Conventional Commits format, one logical change per commit
 
 ## 📋 Requirements
@@ -91,14 +98,14 @@ gecko/
 │   ├── mac-client/                       # macOS SwiftUI menu bar app
 │   │   ├── project.yml                   #   xcodegen config
 │   │   ├── Gecko/Sources/                #   App, Models, Services, Views
-│   │   └── GeckoTests/                   #   259 unit tests + 25 integration
+│   │   └── GeckoTests/                   #   194 unit + integration tests
 │   └── web-dashboard/                    # Web dashboard (vinext + React 19)
 │       ├── drizzle/                      #   D1 migration SQL files
 │       ├── src/
 │       │   ├── app/                      #   Pages & API routes
 │       │   ├── components/               #   UI components (shadcn/ui + custom)
 │       │   └── lib/                      #   Utilities, sync queue, D1 client
-│       └── src/__tests__/                #   258 unit + 25 E2E tests
+│       └── src/__tests__/                #   608 unit + 11 E2E + 6 BDD tests
 ├── docs/                                 # Architecture documentation
 ├── packages/                             # Shared config
 └── scripts/                              # Git hooks & tooling
@@ -114,7 +121,7 @@ xcodebuild test -project apps/mac-client/Gecko.xcodeproj \
 # Mac client — lint (zero tolerance)
 cd apps/mac-client && swiftlint lint --strict
 
-# Web dashboard — unit tests (258 tests, 937 assertions)
+# Web dashboard — unit tests (608 tests, 1879 assertions)
 cd apps/web-dashboard && bun test
 
 # Web dashboard — lint
@@ -122,6 +129,9 @@ cd apps/web-dashboard && bun run lint
 
 # Web dashboard — E2E (requires RUN_E2E=true)
 cd apps/web-dashboard && bun run test:e2e
+
+# Web dashboard — BDD E2E (Playwright)
+cd apps/web-dashboard && bun run test:bdd
 ```
 
 ## 🏗️ Tech Stack
@@ -135,7 +145,7 @@ cd apps/web-dashboard && bun run test:e2e
 | Cloud DB | Cloudflare D1 (SQLite-compatible) |
 | Local DB | SQLite via GRDB (mac) |
 | Charts | Recharts |
-| Testing | Bun test, XCTest, SwiftLint, ESLint |
+| Testing | Bun test, Playwright, XCTest, SwiftLint, ESLint |
 | CI/Hooks | Husky (pre-commit + pre-push) |
 
 ## 📄 License
