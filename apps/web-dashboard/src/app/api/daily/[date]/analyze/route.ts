@@ -243,92 +243,52 @@ function buildSessionTimeline(sessions: SessionForChart[], tz: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Prompt builder
+// Prompt template: default sections & variable expansion
 // ---------------------------------------------------------------------------
 
-// Export internal helpers for unit testing
-export {
-  validateDate as _validateDate,
-  loadAiSettings as _loadAiSettings,
-  loadAppContext as _loadAppContext,
-  buildAppContextSection as _buildAppContextSection,
-  fmtDuration as _fmtDuration,
-  buildSessionTimeline as _buildSessionTimeline,
-  buildPrompt as _buildPrompt,
-  parseAiResponse as _parseAiResponse,
-  IDLE_BUNDLE_IDS as _IDLE_BUNDLE_IDS,
-  BROWSER_BUNDLE_IDS as _BROWSER_BUNDLE_IDS,
-};
-export type { AppContext as _AppContext };
+/** Section 1 — Role & context (no template variables). */
+export const DEFAULT_PROMPT_SECTION_1 =
+  `你是一位专业的生产力分析师。请根据以下用户的电脑使用数据，给出深度分析报告。`;
 
-/** Build the analysis prompt from stats data and app context. */
-function buildPrompt(
-  date: string,
-  stats: DailyStats,
-  appContext: Map<string, AppContext>,
-  tz: string,
-): string {
-  const topAppsStr = stats.topApps
-    .slice(0, 10)
-    .map(
-      (a, i) =>
-        `${i + 1}. ${a.appName} — ${Math.round(a.totalDuration / 60)}min (${a.sessionCount} sessions)`,
-    )
-    .join("\n");
-
-  const scores = stats.scores;
-  const timeline = buildSessionTimeline(stats.sessions, tz);
-
-  // Collect bundle IDs that appeared today
-  const bundleIdsInDay = new Set<string>();
-  for (const s of stats.sessions) {
-    if (s.bundleId) bundleIdsInDay.add(s.bundleId);
-  }
-  const appContextSection = buildAppContextSection(appContext, bundleIdsInDay);
-
-  // Count idle time for context
-  const idleSessions = stats.sessions.filter(
-    (s) => s.bundleId && IDLE_BUNDLE_IDS.has(s.bundleId),
-  );
-  const idleDuration = idleSessions.reduce((sum, s) => sum + s.duration, 0);
-  const idleNote = idleDuration > 0
-    ? `\n- 闲置/锁屏时间：${Math.round(idleDuration / 60)} 分钟（loginwindow/ScreenSaver 等属于闲置，不应算作有效工作）`
-    : "";
-
-  return `你是一位专业的生产力分析师。请根据以下用户 ${date} 的电脑使用数据，给出深度分析报告。
-
-## 数据概览
-- 总活跃时长：${Math.round(stats.totalDuration / 60)} 分钟
-- 总会话数：${stats.totalSessions}
-- 使用应用数：${stats.totalApps}
-- 活跃时间跨度：${Math.round(stats.activeSpan / 60)} 分钟${idleNote}
+/** Section 2 — Data injection (supports {{variable}} expansion). */
+export const DEFAULT_PROMPT_SECTION_2 =
+  `## 数据概览
+- 分析日期：{{date}}
+- 总活跃时长：{{totalDuration}} 分钟
+- 总会话数：{{totalSessions}}
+- 使用应用数：{{totalApps}}
+- 活跃时间跨度：{{activeSpan}} 分钟{{idleNote}}
 
 ## 评分（规则计算）
-- 专注度：${scores.focus}/100
-- 深度工作：${scores.deepWork}/100
-- 切换频率：${scores.switchRate}/100
-- 集中度：${scores.concentration}/100
-- 综合评分：${scores.overall}/100
+- 专注度：{{scores.focus}}/100
+- 深度工作：{{scores.deepWork}}/100
+- 切换频率：{{scores.switchRate}}/100
+- 集中度：{{scores.concentration}}/100
+- 综合评分：{{scores.overall}}/100
 
 ## Top 应用
-${topAppsStr}
-${appContextSection}
+{{topApps}}
+{{appContext}}
 ## 详细会话时间线
 以下为按时间排列的所有会话，包含应用名、时长、窗口标题、浏览器URL等。
 标记 [IDLE/锁屏] 的条目为系统闲置（如 loginwindow），不应计入有效工作时间。
 浏览器条目包含 URL 和页面标题，请从中分析用户实际浏览的内容主题。
 
-${timeline}
+{{timeline}}`;
 
-## 分析要求
+/** Section 3 — Analysis rules (no template variables). */
+export const DEFAULT_PROMPT_SECTION_3 =
+  `## 分析要求
 
 ### 重要规则
 1. **loginwindow / ScreenSaver 等闲置进程**：这些代表电脑在锁屏或无人操作状态，评价生产力时应排除，不作为前台积极工作。
 2. **浏览器内容分析**：重点分析浏览器的 URL 和标题，判断用户是在工作（查文档、写代码、看技术文章）还是在休闲（社交媒体、视频、新闻）。
 3. **时段划分**：将一天划分为 3-6 个时段，每个时段给出 focus 方向标签和描述。时段的划分应基于实际工作内容的切换，而非固定间隔。
-4. **应用上下文**：如果提供了"应用上下文"部分，请结合用户对应用的分类、标签和备注来理解每个应用的实际用途。用户的备注是最可靠的上下文来源，比单纯从应用名推测更准确。
+4. **应用上下文**：如果提供了"应用上下文"部分，请结合用户对应用的分类、标签和备注来理解每个应用的实际用途。用户的备注是最可靠的上下文来源，比单纯从应用名推测更准确。`;
 
-### 输出格式
+/** Section 4 — Output format (no template variables). */
+export const DEFAULT_PROMPT_SECTION_4 =
+  `### 输出格式
 请以 JSON 格式返回分析结果，包含以下字段：
 - score: 你给出的综合评分（1-100整数，基于实际有效工作，排除闲置时间）
 - highlights: 今日亮点（字符串数组，2-4条，中文）
@@ -340,6 +300,120 @@ ${timeline}
 - summary: 综合总结（Markdown 格式，中文，300-500字，包含对工作内容和浏览内容的深度分析）
 
 只返回 JSON，不要包含其他内容。不要使用 markdown 代码块包裹。`;
+
+/** All template variables available for Section 2 with descriptions. */
+export const PROMPT_TEMPLATE_VARIABLES = [
+  { key: "date", description: "分析日期", example: "2026-03-06" },
+  { key: "totalDuration", description: "总活跃时长（分钟）", example: "342" },
+  { key: "totalSessions", description: "总会话数", example: "47" },
+  { key: "totalApps", description: "使用应用数", example: "12" },
+  { key: "activeSpan", description: "活跃时间跨度（分钟）", example: "540" },
+  { key: "idleNote", description: "闲置时间说明（可为空）", example: "\n- 闲置/锁屏时间：30 分钟..." },
+  { key: "scores.focus", description: "专注度评分", example: "75" },
+  { key: "scores.deepWork", description: "深度工作评分", example: "60" },
+  { key: "scores.switchRate", description: "切换频率评分", example: "80" },
+  { key: "scores.concentration", description: "集中度评分", example: "70" },
+  { key: "scores.overall", description: "综合评分", example: "71" },
+  { key: "topApps", description: "Top 10 应用列表（多行）", example: "1. VS Code — 120min (8 sessions)\n2. Chrome — 45min (12 sessions)" },
+  { key: "appContext", description: "应用上下文标注（可为空）", example: "## 应用上下文（用户标注）\n..." },
+  { key: "timeline", description: "详细会话时间线（多行）", example: "[09:00] VS Code (30min) — \"main.ts\"" },
+] as const;
+
+/** Custom prompt sections supplied by the user (all optional). */
+export interface CustomPromptSections {
+  section1?: string;
+  section2?: string;
+  section3?: string;
+  section4?: string;
+}
+
+/**
+ * Expand {{variable}} placeholders in a template string.
+ * Only known keys are expanded; unknown placeholders are left as-is.
+ */
+function expandTemplate(template: string, vars: Record<string, string>): string {
+  return template.replace(/\{\{(\w+(?:\.\w+)*)\}\}/g, (match, key: string) => {
+    return key in vars ? vars[key]! : match;
+  });
+}
+
+// Export internal helpers for unit testing
+export {
+  validateDate as _validateDate,
+  loadAiSettings as _loadAiSettings,
+  loadAppContext as _loadAppContext,
+  buildAppContextSection as _buildAppContextSection,
+  fmtDuration as _fmtDuration,
+  buildSessionTimeline as _buildSessionTimeline,
+  buildPrompt as _buildPrompt,
+  parseAiResponse as _parseAiResponse,
+  expandTemplate as _expandTemplate,
+  IDLE_BUNDLE_IDS as _IDLE_BUNDLE_IDS,
+  BROWSER_BUNDLE_IDS as _BROWSER_BUNDLE_IDS,
+};
+export type { AppContext as _AppContext };
+
+/** Build the analysis prompt from stats data and app context. */
+function buildPrompt(
+  date: string,
+  stats: DailyStats,
+  appContext: Map<string, AppContext>,
+  tz: string,
+  custom?: CustomPromptSections,
+): string {
+  // --- Compute all template variable values ---
+  const topAppsStr = stats.topApps
+    .slice(0, 10)
+    .map(
+      (a, i) =>
+        `${i + 1}. ${a.appName} — ${Math.round(a.totalDuration / 60)}min (${a.sessionCount} sessions)`,
+    )
+    .join("\n");
+
+  const scores = stats.scores;
+  const timeline = buildSessionTimeline(stats.sessions, tz);
+
+  const bundleIdsInDay = new Set<string>();
+  for (const s of stats.sessions) {
+    if (s.bundleId) bundleIdsInDay.add(s.bundleId);
+  }
+  const appContextSection = buildAppContextSection(appContext, bundleIdsInDay);
+
+  const idleSessions = stats.sessions.filter(
+    (s) => s.bundleId && IDLE_BUNDLE_IDS.has(s.bundleId),
+  );
+  const idleDuration = idleSessions.reduce((sum, s) => sum + s.duration, 0);
+  const idleNote = idleDuration > 0
+    ? `\n- 闲置/锁屏时间：${Math.round(idleDuration / 60)} 分钟（loginwindow/ScreenSaver 等属于闲置，不应算作有效工作）`
+    : "";
+
+  const vars: Record<string, string> = {
+    date,
+    totalDuration: String(Math.round(stats.totalDuration / 60)),
+    totalSessions: String(stats.totalSessions),
+    totalApps: String(stats.totalApps),
+    activeSpan: String(Math.round(stats.activeSpan / 60)),
+    idleNote,
+    "scores.focus": String(scores.focus),
+    "scores.deepWork": String(scores.deepWork),
+    "scores.switchRate": String(scores.switchRate),
+    "scores.concentration": String(scores.concentration),
+    "scores.overall": String(scores.overall),
+    topApps: topAppsStr,
+    appContext: appContextSection,
+    timeline,
+  };
+
+  // --- Resolve each section: custom or default ---
+  const s1 = custom?.section1 || DEFAULT_PROMPT_SECTION_1;
+  const s2Raw = custom?.section2 || DEFAULT_PROMPT_SECTION_2;
+  const s3 = custom?.section3 || DEFAULT_PROMPT_SECTION_3;
+  const s4 = custom?.section4 || DEFAULT_PROMPT_SECTION_4;
+
+  // Only Section 2 gets template variable expansion
+  const s2 = expandTemplate(s2Raw, vars);
+
+  return [s1, s2, s3, s4].join("\n\n");
 }
 
 /** Parse and validate the AI response JSON. */
