@@ -174,6 +174,7 @@ On each sync cycle:
 |---|---|---|---|
 | `GET` | `/api/keys` | Session | List current user's API keys |
 | `POST` | `/api/keys` | Session | Generate new API key + device_id |
+| `PATCH` | `/api/keys/[id]` | Session | Rename an API key |
 | `DELETE` | `/api/keys/[id]` | Session | Revoke an API key |
 
 ### Data Queries (dashboard)
@@ -202,6 +203,53 @@ On each sync cycle:
 | `GET` | `/api/tags/mappings` | Session | List app→tag mappings |
 | `PUT` | `/api/tags/mappings` | Session | Batch upsert app→tag mappings |
 | `POST` | `/api/tags/mappings` | Session | Replace all tags for given apps |
+
+### Daily Review & AI (dashboard)
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/daily/[date]` | Session | Daily stats (sessions, top apps, timeline) |
+| `POST` | `/api/daily/[date]/analyze` | Session | AI-powered daily analysis |
+
+### Settings (dashboard)
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/settings/timezone` | Session | Get user's IANA timezone |
+| `PUT` | `/api/settings/timezone` | Session | Set user's IANA timezone |
+| `GET` | `/api/settings/ai` | Session | Get AI provider configuration |
+| `PUT` | `/api/settings/ai` | Session | Set AI provider + model + API key |
+| `POST` | `/api/settings/ai/test` | Session | Test AI connection with current config |
+
+### App Notes (dashboard)
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/apps/notes` | Session | Get all app notes for the user |
+| `PUT` | `/api/apps/notes` | Session | Set/update a note for an app |
+
+### Backy Backup (dashboard)
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/backy/config` | Session | Get Backy service configuration |
+| `POST` | `/api/backy/push` | Session | Push backup data to Backy service |
+| `POST` | `/api/backy/pull` | Session | Pull webhook for Backy restore |
+| `POST` | `/api/backy/test` | Session | Test Backy connection |
+| `GET` | `/api/backy/history` | Session | Get backup history |
+| `GET` | `/api/backy/pull-key` | Session | Generate pull webhook key |
+
+### Public API
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/v1/snapshot` | Bearer token | Public API: current day stats + top apps |
+
+### Health Check
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/live` | None | Liveness probe (unauthenticated) |
 
 ---
 
@@ -411,26 +459,27 @@ CREATE TABLE app_tag_mappings (
 | macOS `SettingsViewModel` sync state | Done | Two-way binding, sync actions, SyncService forwarding |
 | macOS `SettingsView` sync UI | Done | Toggle, API key, server URL, status display, Sync Now |
 | macOS `GeckoApp` wiring | Done | SyncService instantiated and passed to SettingsViewModel |
-| macOS tests | Done | 185 total tests, 0 lint violations |
-| Web dashboard tests | Done | 258 unit tests (0 lint errors) + 25 E2E tests |
-| Git hooks (husky) | Done | pre-commit: UT (both platforms), pre-push: UT + Lint + E2E |
-| E2E test infrastructure | Done | BDD-style tests, self-managed server on port 10728 |
+| macOS tests | Done | 194 test functions, 0 lint violations |
+| Web dashboard tests | Done | 608 unit tests (0 lint errors) + 11 E2E test files + 6 BDD specs |
+| Git hooks (husky) | Done | pre-commit: UT (both platforms), pre-push: UT + Lint + API E2E |
+| E2E test infrastructure | Done | API E2E on port 17028, BDD Playwright on port 27028 |
 
 ---
 
 ## Test Coverage
 
-### Three-Layer Verification
+### Four-Layer Verification
 
 | Layer | Tool | Hook | Description |
 |---|---|---|---|
-| **Unit Tests** | `bun test` + `xcodebuild test` | pre-commit | 185 mac + 258 web = 443 total tests |
-| **Lint** | SwiftLint + ESLint | pre-push | 0 violations, 0 errors |
-| **E2E** | `bun run test:e2e` | pre-push (when present) | 25 integration tests against live server |
+| **L1: Unit Tests** | `bun test` + `xcodebuild test` | pre-commit | 194 mac + 608 web = 802 total tests |
+| **L2: Lint** | SwiftLint (`--strict`) + ESLint (strict) | pre-push | 0 violations, 0 errors |
+| **L3: API E2E** | `bun run test:e2e` | pre-push | 11 test files against live server on port 17028 |
+| **L4: BDD E2E** | `bun run test:bdd` (Playwright) | on-demand | 6 spec files, 21 browser tests on port 27028 |
 
-### E2E Test Scenarios
+### E2E Test Scenarios (L3)
 
-Run via `bun run test:e2e` (sets `RUN_E2E=true`, starts server on port 10728):
+Run via `bun run test:e2e` (sets `RUN_E2E=true`, starts server on port 17028):
 
 **Sync round-trip (`sync-roundtrip.test.ts`):**
 
@@ -446,6 +495,18 @@ Run via `bun run test:e2e` (sets `RUN_E2E=true`, starts server on port 10728):
 7. **Category mappings** — Sync a session -> PUT assigns app to category -> GET confirms mapping
 8. **Tag mappings** — POST assigns multiple tags -> GET confirms -> POST replaces (remove one) -> POST with empty tagIds clears all
 
+**Additional E2E test files:**
+
+- `keys-roundtrip.test.ts` — API key create, rename (PATCH), list, revoke lifecycle
+- `public-api.test.ts` — `/api/v1/snapshot` with bearer token auth
+- `stats.test.ts` — `/api/stats` and `/api/stats/timeline` period filters
+- `timezone-settings.test.ts` — timezone GET/PUT round-trip
+- `app-notes.test.ts` — App notes GET/PUT
+- `sync-status.test.ts` — Sync status after upload
+- `daily-review.test.ts` — Daily stats and AI analyze endpoints
+- `backy-roundtrip.test.ts` — Backy push/pull/config/history
+- `ai-settings.test.ts` — AI provider config and test connection
+
 ### Running Tests
 
 ```bash
@@ -459,4 +520,7 @@ cd apps/mac-client && swiftlint lint --strict
 
 # E2E tests (explicit invocation)
 cd apps/web-dashboard && bun run test:e2e
+
+# BDD E2E tests (Playwright, on-demand)
+cd apps/web-dashboard && bun run test:bdd
 ```
