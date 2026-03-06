@@ -1,5 +1,7 @@
 # Energy Efficiency — Phase 1: Quick Wins
 
+> **Status: COMPLETED** (v1.0.1). All 5 fixes are implemented. This document is retained as a design reference.
+
 ## Overview
 
 Phase 1 addresses the most impactful energy problems with minimal code changes. These five fixes can be implemented in ~1 hour, yield a combined 60-80% energy reduction, and have **zero impact on tracking accuracy**.

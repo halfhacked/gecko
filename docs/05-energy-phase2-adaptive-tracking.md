@@ -1,5 +1,7 @@
 # Energy Efficiency — Phase 2: Adaptive Tracking
 
+> **Status: COMPLETED** (v1.0.1). All 4 fixes are implemented. This document is retained as a design reference.
+
 ## Overview
 
 Phase 2 builds on the quick wins from Phase 1 by making the tracking engine smarter about *when* and *how often* it polls. Instead of a fixed 3-second interval, the engine adapts its behavior based on user activity patterns, battery state, and application context.

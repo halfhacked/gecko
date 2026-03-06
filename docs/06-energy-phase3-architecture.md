@@ -1,5 +1,7 @@
 # Energy Efficiency — Phase 3: Architecture Refactoring
 
+> **Status: COMPLETED** (v1.0.1). All 4 items are implemented. This document is retained as a design reference.
+
 ## Overview
 
 Phase 3 restructures the `TrackingEngine` around a formal state machine, replaces ad-hoc boolean flags with clean state transitions, and applies deeper optimizations to DB writes and sync behavior. This is the "do it right" phase that sets the foundation for long-term maintainability.
