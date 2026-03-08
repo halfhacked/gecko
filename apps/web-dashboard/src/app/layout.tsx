@@ -11,15 +11,19 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXTAUTH_URL ?? "http://localhost:3000",
+  ),
   title: "Gecko — Screen Time Dashboard",
   description: "Personal screen time tracking and focus analytics",
-  icons: {
-    icon: [
-      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
-      { url: "/favicon-16.png", sizes: "16x16", type: "image/png" },
-    ],
-    apple: "/apple-touch-icon.png",
+  openGraph: {
+    title: "Gecko — Screen Time Dashboard",
+    description: "Personal screen time tracking and focus analytics",
+    type: "website",
+    // opengraph-image.png in src/app/ is auto-discovered by Next.js
   },
+  // icon.png, apple-icon.png, favicon.ico in src/app/ are auto-discovered
+  // by Next.js file-based metadata convention — no manual <link> tags needed.
 };
 
 export default function RootLayout({

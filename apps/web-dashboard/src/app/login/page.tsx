@@ -73,7 +73,7 @@ function LoginContent() {
               />
               <div className="flex items-center gap-2">
                 <img
-                  src="/favicon-32.png"
+                  src="/logo-sidebar.png"
                   alt="Gecko"
                   width={16}
                   height={16}
