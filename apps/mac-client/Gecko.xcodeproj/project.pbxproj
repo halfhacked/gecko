@@ -290,8 +290,8 @@
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					C29118035DDE5E77A4D75647 = {
-					DevelopmentTeam = 93WWLTN9XU;
-					ProvisioningStyle = Automatic;
+						DevelopmentTeam = 93WWLTN9XU;
+						ProvisioningStyle = Automatic;
 					};
 				};
 			};
@@ -406,7 +406,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.5.0;
+				MARKETING_VERSION = 1.5.1;
 				PRODUCT_BUNDLE_IDENTIFIER = ai.hexly.gecko;
 				PRODUCT_NAME = Gecko;
 				SDKROOT = macosx;
@@ -513,7 +513,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.5.0;
+				MARKETING_VERSION = 1.5.1;
 				PRODUCT_BUNDLE_IDENTIFIER = ai.hexly.gecko;
 				PRODUCT_NAME = Gecko;
 				SDKROOT = macosx;

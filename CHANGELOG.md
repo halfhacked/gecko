@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.5.1] - 2026-03-10
+
+### Mac App
+
+#### Fixed
+- **Auto-start tracking on login-item launch**: Tracking never started when the app launched as a login item (via "Launch at login"). The auto-start logic was attached to the main `Window` scene's `.task`, which is not evaluated for `LSUIElement` apps launched in the background. Added a duplicate `.task` on the `MenuBarExtra` scene, which is always initialized on app launch regardless of launch method
+
+#### Changed
+- **Standardized Apple Development signing**: Switched from ad-hoc signing to stable `Apple Development` identity with team `93WWLTN9XU`, preserving TCC permissions across rebuilds
+- **Logo asset pipeline**: Standardized to single-source pattern for consistent icon rendering
+
 ## [1.5.0] - 2026-03-07
 
 ### Web Dashboard

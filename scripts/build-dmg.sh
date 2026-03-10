@@ -34,8 +34,10 @@ if ! command -v create-dmg &>/dev/null; then
   exit 1
 fi
 
-# Clean build directory
-rm -rf "$BUILD_DIR"
+# Clean build directory (only when building from scratch)
+if [ "$SKIP_BUILD" = false ]; then
+  rm -rf "$BUILD_DIR"
+fi
 mkdir -p "$BUILD_DIR"
 
 if [ "$SKIP_BUILD" = false ]; then
