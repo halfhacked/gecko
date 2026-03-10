@@ -71,6 +71,9 @@ struct GeckoApp: App {
                 viewModel: menuBarViewModel,
                 tabSelection: tabSelection
             )
+            .task {
+                await autoStartTrackingIfNeeded()
+            }
         }
 
         // Native macOS Settings window (Cmd+,)
