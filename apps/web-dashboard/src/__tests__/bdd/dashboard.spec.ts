@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
 
+const BASE_URL = "http://localhost:27028";
+
 test.describe("Dashboard", () => {
   test("renders welcome heading and stat cards", async ({ page }) => {
     await page.goto("/");
@@ -16,6 +18,24 @@ test.describe("Dashboard", () => {
   });
 
   test("shows charts when data exists", async ({ page }) => {
+    // Seed test data via API so charts render
+    const now = new Date();
+    const session = {
+      id: `bdd-chart-${crypto.randomUUID()}`,
+      app_name: "BDD Chart Test",
+      window_title: "Chart Seed",
+      start_time: new Date(now.getTime() - 3600_000).toISOString(),
+      end_time: now.toISOString(),
+      duration: 3600,
+    };
+    await fetch(`${BASE_URL}/api/sync`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessions: [session] }),
+    });
+    // Wait for sync queue to drain
+    await new Promise((r) => setTimeout(r, 4000));
+
     await page.goto("/");
 
     // Wait for charts to render (default period is "7 Days")
