@@ -23,6 +23,7 @@ Package.resolved
 node_modules/
 .next/
 .env*.local
+.env.e2e
 .wrangler/
 
 # Build artifacts
