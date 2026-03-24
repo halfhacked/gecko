@@ -1,10 +1,13 @@
-# pre-commit: run unit tests for both mac-client and web-dashboard
+# pre-commit = L1 (Unit Tests) + G1 (Static Analysis)
+# Target: < 30s
 
 set -euo pipefail
 
-echo "==> [pre-commit] Running unit tests..."
+# ----------------------------------------------------------
+# L1: Unit tests (both platforms)
+# ----------------------------------------------------------
+echo "==> [pre-commit] L1: Running unit tests..."
 
-# Mac client tests
 cd apps/mac-client
 xcodebuild test \
   -project Gecko.xcodeproj \
@@ -14,9 +17,32 @@ xcodebuild test \
   2>&1 | tail -5
 cd ../..
 
-# Web dashboard tests (with coverage gate — enforces bunfig.toml thresholds)
 cd apps/web-dashboard
 bun test --coverage src/__tests__/lib src/__tests__/api src/__tests__/components src/__tests__/*.test.ts --timeout 30000 2>&1 | tail -20
 cd ../..
 
-echo "==> [pre-commit] Tests passed."
+echo "==> [pre-commit] L1: Unit tests passed."
+
+# ----------------------------------------------------------
+# G1: Static analysis (lint strict, zero warnings)
+# ----------------------------------------------------------
+echo "==> [pre-commit] G1: Running static analysis..."
+
+# SwiftLint (mac-client) — strict mode, zero violations
+LINT_RESULT=$(cd apps/mac-client && swiftlint lint --strict --reporter json 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d))" 2>/dev/null || echo "error")
+
+if [ "$LINT_RESULT" != "0" ]; then
+  echo "==> [pre-commit] FAILED: swiftlint found $LINT_RESULT violations"
+  cd apps/mac-client && swiftlint lint --strict 2>/dev/null
+  exit 1
+fi
+echo "==> [pre-commit] G1: SwiftLint passed (0 violations)."
+
+# ESLint (web-dashboard) — tseslint.strict + --max-warnings=0
+cd apps/web-dashboard
+bun run lint 2>&1 | tail -5
+cd ../..
+
+echo "==> [pre-commit] G1: ESLint passed."
+
+echo "==> [pre-commit] All checks passed (L1 + G1)."

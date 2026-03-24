@@ -1,73 +1,52 @@
-# pre-push: run UT + Lint + API E2E — verification gate before pushing
+# pre-push = L2 (Integration/API E2E) + G2 (Security)
 # NOTE: BDD E2E (Playwright) removed from pre-push — run on-demand via `bun run test:bdd`
 
 set -euo pipefail
 
 # ----------------------------------------------------------
-# 1. Unit tests (both platforms)
-# ----------------------------------------------------------
-echo "==> [pre-push] Running unit tests..."
-
-cd apps/mac-client
-xcodebuild test \
-  -project Gecko.xcodeproj \
-  -scheme GeckoTests \
-  -destination 'platform=macOS' \
-  -quiet \
-  2>&1 | tail -5
-cd ../..
-
-cd apps/web-dashboard
-bun test src/__tests__/lib src/__tests__/api src/__tests__/components src/__tests__/*.test.ts --timeout 30000 2>&1 | tail -5
-cd ../..
-
-echo "==> [pre-push] Unit tests passed."
-
-# ----------------------------------------------------------
-# 2. Lint
-# ----------------------------------------------------------
-echo "==> [pre-push] Running lint..."
-
-# SwiftLint (mac-client)
-LINT_RESULT=$(cd apps/mac-client && swiftlint lint --strict --reporter json 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d))" 2>/dev/null || echo "error")
-
-if [ "$LINT_RESULT" != "0" ]; then
-  echo "==> [pre-push] FAILED: swiftlint found $LINT_RESULT violations"
-  cd apps/mac-client && swiftlint lint --strict 2>/dev/null
-  exit 1
-fi
-echo "==> [pre-push] SwiftLint passed (0 violations)."
-
-# ESLint (web-dashboard)
-cd apps/web-dashboard
-bun run lint 2>&1 | tail -5
-cd ../..
-
-echo "==> [pre-push] ESLint passed."
-
-# ----------------------------------------------------------
-# 3. API E2E tests (auto-managed server on port 17028)
+# L2: API E2E tests (auto-managed server on port 17028)
 # ----------------------------------------------------------
 if [ -d "apps/web-dashboard/src/__tests__/e2e" ]; then
-  echo "==> [pre-push] Starting E2E server..."
+  echo "==> [pre-push] L2: Starting E2E server..."
   scripts/e2e-server.sh start 17028
 
-  echo "==> [pre-push] Running API E2E tests..."
+  echo "==> [pre-push] L2: Running API E2E tests..."
   E2E_FAILED=0
   cd apps/web-dashboard
   RUN_E2E=true bun test src/__tests__/e2e/ --timeout 60000 2>&1 | tail -10 || E2E_FAILED=1
   cd ../..
 
-  echo "==> [pre-push] Stopping E2E server..."
+  echo "==> [pre-push] L2: Stopping E2E server..."
   scripts/e2e-server.sh stop
 
   if [ "$E2E_FAILED" -ne 0 ]; then
     echo "==> [pre-push] FAILED: API E2E tests failed"
     exit 1
   fi
-  echo "==> [pre-push] API E2E tests passed."
+  echo "==> [pre-push] L2: API E2E tests passed."
 else
-  echo "==> [pre-push] Skipping E2E (no test directory yet)."
+  echo "==> [pre-push] L2: Skipping E2E (no test directory yet)."
 fi
 
-echo "==> [pre-push] All checks passed. Pushing..."
+# ----------------------------------------------------------
+# G2: Security scanning
+# ----------------------------------------------------------
+echo "==> [pre-push] G2: Running security scans..."
+
+# G2a: Gitleaks — secrets detection
+echo "==> [pre-push] G2: Checking for leaked secrets (gitleaks)..."
+gitleaks protect --staged --no-banner -c .gitleaks.toml
+echo "==> [pre-push] G2: Gitleaks passed (no leaks detected)."
+
+# G2b: osv-scanner — dependency vulnerability scanning
+echo "==> [pre-push] G2: Scanning dependencies for vulnerabilities (osv-scanner)..."
+cd apps/web-dashboard
+osv-scanner --lockfile=bun.lock 2>&1 || {
+  echo "==> [pre-push] FAILED: osv-scanner found vulnerabilities"
+  cd ..
+  exit 1
+}
+cd ../..
+echo "==> [pre-push] G2: osv-scanner passed (no vulnerabilities)."
+
+echo "==> [pre-push] All checks passed (L2 + G2). Pushing..."
