@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
-import { query, execute, getD1Config } from "../../lib/d1";
+import { query, execute, getD1Config, verifyTestDatabase } from "../../lib/d1";
 
 // ---------------------------------------------------------------------------
 // D1 client tests — unit tests with mocked fetch
@@ -15,6 +15,7 @@ beforeEach(() => {
 
 afterEach(() => {
   globalThis.fetch = originalFetch;
+  delete process.env.CF_D1_DATABASE_ID_TEST;
 });
 
 // Helper: mock fetch to return a D1 response
@@ -180,6 +181,70 @@ describe("d1 client", () => {
       expect(config.accountId).toBe("");
       expect(config.apiToken).toBe("");
       expect(config.databaseId).toBe("");
+    });
+
+    test("CF_D1_DATABASE_ID_TEST takes priority over CF_D1_DATABASE_ID", () => {
+      process.env.CF_D1_DATABASE_ID_TEST = "test-override-db-id";
+
+      const config = getD1Config();
+      expect(config.databaseId).toBe("test-override-db-id");
+
+      delete process.env.CF_D1_DATABASE_ID_TEST;
+    });
+
+    test("falls back to CF_D1_DATABASE_ID when TEST var is absent", () => {
+      delete process.env.CF_D1_DATABASE_ID_TEST;
+
+      const config = getD1Config();
+      expect(config.databaseId).toBe("test-db-id");
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // verifyTestDatabase()
+  // ---------------------------------------------------------------------------
+
+  describe("verifyTestDatabase()", () => {
+    test("passes when _test_marker has env=test", async () => {
+      mockFetch([{ key: "env", value: "test" }]);
+
+      await expect(verifyTestDatabase()).resolves.toBeUndefined();
+    });
+
+    test("throws when _test_marker has wrong value", async () => {
+      mockFetch([{ key: "env", value: "production" }]);
+
+      await expect(verifyTestDatabase()).rejects.toThrow(
+        "is NOT a test instance"
+      );
+    });
+
+    test("throws when _test_marker returns empty rows", async () => {
+      mockFetch([]);
+
+      await expect(verifyTestDatabase()).rejects.toThrow(
+        "is NOT a test instance"
+      );
+    });
+
+    test("throws when _test_marker table does not exist", async () => {
+      // Simulate a D1 error for missing table
+      globalThis.fetch = mock(() =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({
+              success: false,
+              result: [{ results: [], success: false, meta: { changes: 0, last_row_id: 0 } }],
+              errors: [{ message: "no such table: _test_marker" }],
+            }),
+            { status: 200 }
+          )
+        )
+      ) as unknown as typeof fetch;
+
+      await expect(verifyTestDatabase()).rejects.toThrow(
+        "not configured for E2E testing"
+      );
     });
   });
 });

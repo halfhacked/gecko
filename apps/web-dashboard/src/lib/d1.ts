@@ -29,12 +29,15 @@ interface D1Response {
   errors: Array<{ message: string }>;
 }
 
-/** Read D1 config from environment variables. */
+/** Read D1 config from environment variables.
+ *  When CF_D1_DATABASE_ID_TEST is set (E2E mode), it takes priority
+ *  over the production CF_D1_DATABASE_ID to ensure test isolation. */
 export function getD1Config(): D1Config {
+  const testDbId = process.env.CF_D1_DATABASE_ID_TEST;
   return {
     accountId: process.env.CF_ACCOUNT_ID ?? "",
     apiToken: process.env.CF_API_TOKEN ?? "",
-    databaseId: process.env.CF_D1_DATABASE_ID ?? "",
+    databaseId: testDbId || process.env.CF_D1_DATABASE_ID || "",
   };
 }
 
@@ -109,3 +112,31 @@ export async function query<T = Record<string, unknown>>(
   const result = await execute(sql, params);
   return result.results as T[];
 }
+
+/** Verify the connected D1 database has a _test_marker table with env=test.
+ *  Call this in E2E setup to prevent accidental writes to production. */
+export async function verifyTestDatabase(): Promise<void> {
+  const config = getD1Config();
+  try {
+    const rows = await query<{ key: string; value: string }>(
+      "SELECT key, value FROM _test_marker WHERE key = ?",
+      ["env"]
+    );
+    if (rows.length === 0 || rows[0].value !== "test") {
+      throw new Error(
+        `D1 test marker check failed: database ${config.databaseId} is NOT a test instance. ` +
+          `Expected _test_marker.env = 'test'. Refusing to run E2E tests against production data.`
+      );
+    }
+  } catch (err) {
+    if (err instanceof Error && err.message.includes("test marker check failed")) {
+      throw err;
+    }
+    throw new Error(
+      `D1 test marker table missing in database ${config.databaseId}. ` +
+        `This database is not configured for E2E testing. ` +
+        `Create the marker: INSERT INTO _test_marker (key, value) VALUES ('env', 'test')`
+    );
+  }
+}
+

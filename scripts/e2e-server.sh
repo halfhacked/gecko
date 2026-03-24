@@ -5,12 +5,18 @@
 #   scripts/e2e-server.sh start <port>   # Start server, save PID
 #   scripts/e2e-server.sh stop            # Kill saved PID
 #
+# D1 test isolation: The server is started with CF_D1_DATABASE_ID_TEST pointing
+# to the gecko-test D1 instance. This ensures E2E tests never touch production data.
+#
 # The script stores the server PID in /tmp/gecko-e2e-server.pid.
 
 set -euo pipefail
 
 PID_FILE="/tmp/gecko-e2e-server.pid"
 HEALTH_TIMEOUT=30  # seconds
+
+# D1 test database ID — gecko-test instance (isolated from production)
+CF_D1_DATABASE_ID_TEST="bbe41479-5eeb-4598-abc5-12ccebcb9465"
 
 start_server() {
   local port="${1:?Usage: e2e-server.sh start <port>}"
@@ -24,10 +30,10 @@ start_server() {
     sleep 1
   fi
 
-  # Start E2E dev server in background
-  echo "[e2e-server] Starting dev server on port $port..."
+  # Start E2E dev server in background with test DB isolation
+  echo "[e2e-server] Starting dev server on port $port (test DB: $CF_D1_DATABASE_ID_TEST)..."
   cd apps/web-dashboard
-  E2E_SKIP_AUTH=true bun run vinext dev --port "$port" &>/dev/null &
+  E2E_SKIP_AUTH=true CF_D1_DATABASE_ID_TEST="$CF_D1_DATABASE_ID_TEST" bun run vinext dev --port "$port" &>/dev/null &
   local pid=$!
   cd ../..
   echo "$pid" > "$PID_FILE"

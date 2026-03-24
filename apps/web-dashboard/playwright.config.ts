@@ -29,7 +29,8 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: "E2E_SKIP_AUTH=true bunx vinext dev --port 27028",
+    command:
+      "E2E_SKIP_AUTH=true CF_D1_DATABASE_ID_TEST=bbe41479-5eeb-4598-abc5-12ccebcb9465 bunx vinext dev --port 27028",
     port: 27028,
     timeout: 60_000,
     stdout: "pipe",
