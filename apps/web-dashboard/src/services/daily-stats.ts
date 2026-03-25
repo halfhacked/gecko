@@ -104,14 +104,15 @@ export function mergeAdjacentSessions(
   const segments: MergedSegment[] = [];
 
   let current: MergedSegment = {
-    appName: sorted[0]!.app_name,
-    start: sorted[0]!.start_time,
-    end: sorted[0]!.start_time + sorted[0]!.duration,
-    totalDuration: sorted[0]!.duration,
+    appName: sorted[0]?.app_name ?? "",
+    start: sorted[0]?.start_time ?? 0,
+    end: (sorted[0]?.start_time ?? 0) + (sorted[0]?.duration ?? 0),
+    totalDuration: sorted[0]?.duration ?? 0,
   };
 
   for (let i = 1; i < sorted.length; i++) {
-    const row = sorted[i]!;
+    const row = sorted[i];
+    if (!row) continue;
     const gap = row.start_time - current.end;
     const sameApp = row.app_name === current.appName;
 
@@ -148,7 +149,7 @@ export function computeScores(rows: SessionRow[]): DailyScores {
   const sorted = [...rows].sort((a, b) => a.start_time - b.start_time);
 
   const totalDuration = sorted.reduce((sum, r) => sum + r.duration, 0);
-  const firstStart = sorted[0]!.start_time;
+  const firstStart = sorted[0]?.start_time ?? 0;
   const lastEnd = Math.max(...sorted.map((r) => r.start_time + r.duration));
   const activeSpan = lastEnd - firstStart;
 
@@ -167,7 +168,9 @@ export function computeScores(rows: SessionRow[]): DailyScores {
   // 3. Switch Rate: count app switches per hour
   let switches = 0;
   for (let i = 1; i < sorted.length; i++) {
-    if (sorted[i]!.app_name !== sorted[i - 1]!.app_name) {
+    const curr = sorted[i];
+    const prev = sorted[i - 1];
+    if (curr && prev && curr.app_name !== prev.app_name) {
       switches++;
     }
   }
@@ -227,7 +230,7 @@ export function computeDailyStats(date: string, rows: SessionRow[]): DailyStats 
 
   const totalDuration = sorted.reduce((sum, r) => sum + r.duration, 0);
   const uniqueApps = new Set(sorted.map((r) => r.app_name));
-  const firstStart = sorted[0]!.start_time;
+  const firstStart = sorted[0]?.start_time ?? 0;
   const lastEnd = Math.max(...sorted.map((r) => r.start_time + r.duration));
   const activeSpan = lastEnd - firstStart;
 

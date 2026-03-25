@@ -16,6 +16,12 @@ const eslintConfig = defineConfig([
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
+    },
+  },
+  // Relax non-null assertion rule for test files only
+  {
+    files: ["src/__tests__/**/*.ts", "src/__tests__/**/*.tsx"],
+    rules: {
       "@typescript-eslint/no-non-null-assertion": "off",
     },
   },

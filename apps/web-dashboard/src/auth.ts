@@ -17,8 +17,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   trustHost: true,
   providers: [
     Google({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId: process.env.GOOGLE_CLIENT_ID ?? "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
       // Disable all OAuth checks (PKCE + state) — vinext's RSC
       // request handling doesn't preserve auth cookies across
       // the OAuth redirect round-trip, causing InvalidCheck errors.

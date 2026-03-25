@@ -93,7 +93,7 @@ function todayStr(tz: string): string {
 
 function addDays(dateStr: string, days: number): string {
   const parts = dateStr.split("-").map(Number);
-  const utc = new Date(Date.UTC(parts[0]!, parts[1]! - 1, parts[2]! + days));
+  const utc = new Date(Date.UTC(parts[0] ?? 0, (parts[1] ?? 1) - 1, (parts[2] ?? 1) + days));
   return `${utc.getUTCFullYear()}-${String(utc.getUTCMonth() + 1).padStart(2, "0")}-${String(utc.getUTCDate()).padStart(2, "0")}`;
 }
 

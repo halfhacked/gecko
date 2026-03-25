@@ -280,7 +280,7 @@ export interface CustomPromptSections {
  */
 function expandTemplate(template: string, vars: Record<string, string>): string {
   return template.replace(/\{\{(\w+(?:\.\w+)*)\}\}/g, (match, key: string) => {
-    return key in vars ? vars[key]! : match;
+    return key in vars ? (vars[key] ?? "") : match;
   });
 }
 

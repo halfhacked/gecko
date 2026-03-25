@@ -37,7 +37,7 @@ export async function seedDefaultCategories(userId: string): Promise<boolean> {
     () => "(?, ?, ?, ?, 1, ?, ?)",
   ).join(", ");
   const catParams = DEFAULT_CATEGORIES.flatMap((cat) => [
-    categoryIdBySlug.get(cat.slug)!,
+    categoryIdBySlug.get(cat.slug) ?? "",
     userId,
     cat.title,
     cat.icon,

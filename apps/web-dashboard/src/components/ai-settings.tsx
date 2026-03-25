@@ -593,7 +593,8 @@ export function PromptTemplateSection() {
   }, [sections]);
 
   const handleResetSection = useCallback((key: SectionKey) => {
-    const meta = SECTION_META.find((m) => m.key === key)!;
+    const meta = SECTION_META.find((m) => m.key === key);
+    if (!meta) return;
     setSections((prev) => ({ ...prev, [key]: meta.default }));
     setDirty(true);
   }, []);

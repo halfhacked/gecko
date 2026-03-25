@@ -150,7 +150,7 @@ export default function AppsPage() {
         if (!tagMap.has(m.bundleId)) {
           tagMap.set(m.bundleId, new Set());
         }
-        tagMap.get(m.bundleId)!.add(m.tagId);
+        tagMap.get(m.bundleId)?.add(m.tagId);
       }
       setTagMappings(tagMap);
 

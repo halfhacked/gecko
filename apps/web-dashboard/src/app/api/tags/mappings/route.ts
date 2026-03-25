@@ -121,7 +121,7 @@ export async function POST(req: Request): Promise<Response> {
   let updated = 0;
 
   for (const app of body.apps) {
-    const bundleId = app.bundleId!.trim();
+    const bundleId = (app.bundleId ?? "").trim();
     const tagIds = (app.tagIds ?? [])
       .map((t) => t.trim())
       .filter((t) => t.length > 0);

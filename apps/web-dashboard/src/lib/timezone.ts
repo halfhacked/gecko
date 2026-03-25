@@ -96,7 +96,7 @@ function offsetAtEpoch(epochSec: number, tz: string): number {
   });
   const parts = fmt.formatToParts(new Date(ms));
   const get = (type: string) =>
-    parseInt(parts.find((p) => p.type === type)!.value, 10);
+    parseInt(parts.find((p) => p.type === type)?.value ?? "0", 10);
 
   const lY = get("year"), lM = get("month"), lD = get("day");
   let lH = get("hour");
@@ -151,7 +151,7 @@ export function getTimezoneOffsetMinutes(
 
   const parts = fmt.formatToParts(new Date(utcRef));
   const get = (type: string) =>
-    parseInt(parts.find((p) => p.type === type)!.value, 10);
+    parseInt(parts.find((p) => p.type === type)?.value ?? "0", 10);
 
   const localYear = get("year");
   const localMonth = get("month");
