@@ -494,6 +494,7 @@ export default function AppsPage() {
                     setSortField(field);
                     setSortDir(dir);
                   }}
+                  aria-label={`Sort apps by ${sortField}, ${sortDir === "asc" ? "ascending" : "descending"}`}
                   className="h-9 w-[180px]"
                 >
                   <option value="duration-desc">Most used</option>
