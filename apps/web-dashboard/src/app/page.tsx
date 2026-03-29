@@ -29,6 +29,7 @@ import {
 } from "recharts";
 import { AXIS_CONFIG, BAR_RADIUS, formatDurationCompact } from "@/lib/chart-config";
 import { CHART_COLORS, chartPrimary, withAlpha } from "@/lib/palette";
+import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -149,6 +150,7 @@ export default function DashboardPage() {
             value={formatDuration(stats?.totalDuration ?? 0)}
             subtitle={periodLabel(period)}
             loading={loading}
+            className="animate-fade-up stagger-1"
           />
           <StatCard
             icon={<AppWindow className="size-5" />}
@@ -156,6 +158,7 @@ export default function DashboardPage() {
             value={stats?.totalApps?.toString() ?? "0"}
             subtitle={periodLabel(period)}
             loading={loading}
+            className="animate-fade-up stagger-2"
           />
           <StatCard
             icon={<Monitor className="size-5" />}
@@ -163,6 +166,7 @@ export default function DashboardPage() {
             value={stats?.totalSessions?.toString() ?? "0"}
             subtitle={periodLabel(period)}
             loading={loading}
+            className="animate-fade-up stagger-3"
           />
           <StatCard
             icon={<Timer className="size-5" />}
@@ -170,6 +174,7 @@ export default function DashboardPage() {
             value={formatDuration(stats?.longestSession ?? 0)}
             subtitle={periodLabel(period)}
             loading={loading}
+            className="animate-fade-up stagger-4"
           />
         </div>
 
@@ -244,15 +249,17 @@ function StatCard({
   value,
   subtitle,
   loading,
+  className,
 }: {
   icon: React.ReactNode;
   title: string;
   value: string;
   subtitle: string;
   loading: boolean;
+  className?: string;
 }) {
   return (
-    <div className="rounded-2xl bg-secondary p-4">
+    <div className={cn("rounded-2xl bg-secondary p-4", className)}>
       <div className="flex items-center gap-2 text-muted-foreground mb-2">
         {icon}
         <span className="text-sm">{title}</span>
