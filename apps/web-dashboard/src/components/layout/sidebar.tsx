@@ -4,7 +4,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { Collapsible } from "radix-ui";
+import {
+  Collapsible,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   LayoutDashboard,
   List,
@@ -113,22 +116,22 @@ function NavGroupSection({
   const [open, setOpen] = useState(group.defaultOpen ?? true);
 
   return (
-    <Collapsible.Root open={open} onOpenChange={setOpen}>
+    <Collapsible open={open} onOpenChange={setOpen}>
       <div className="px-3 mt-2">
-        <Collapsible.Trigger className="flex w-full items-center justify-between px-3 py-2.5">
-          <span className="text-sm font-normal text-muted-foreground">
+        <CollapsibleTrigger className="flex w-full items-center justify-between px-3 py-2.5">
+          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
             {group.label}
           </span>
           <span className="flex h-7 w-7 shrink-0 items-center justify-center">
             <ChevronUp
               className={cn(
-                "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                "h-3.5 w-3.5 text-muted-foreground transition-transform duration-200",
                 !open && "rotate-180",
               )}
               strokeWidth={1.5}
             />
           </span>
-        </Collapsible.Trigger>
+        </CollapsibleTrigger>
       </div>
 
       <div
@@ -164,7 +167,7 @@ function NavGroupSection({
           </div>
         </div>
       </div>
-    </Collapsible.Root>
+    </Collapsible>
   );
 }
 
@@ -198,10 +201,10 @@ export function Sidebar() {
             {/* Logo */}
             <div className="flex h-14 w-full items-center justify-start pl-[18px] pr-3">
               <img
-                src="/logo-sidebar.png"
+                src="/logo-24.png"
                 alt="Gecko"
-                width={32}
-                height={32}
+                width={24}
+                height={24}
                 className="shrink-0"
               />
             </div>
@@ -292,10 +295,10 @@ export function Sidebar() {
               <div className="flex w-full items-center justify-between px-3">
                 <div className="flex items-center gap-3">
                   <img
-                    src="/logo-sidebar.png"
+                    src="/logo-24.png"
                     alt="Gecko"
-                    width={32}
-                    height={32}
+                    width={24}
+                    height={24}
                     className="shrink-0"
                   />
                   <span className="text-lg font-bold tracking-tight">
