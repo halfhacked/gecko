@@ -3,7 +3,9 @@
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import { Github } from "lucide-react";
 import { APP_VERSION } from "@/lib/version";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 import LoadingScreen from "@/components/loading-screen";
 
 function Barcode() {
@@ -32,22 +34,41 @@ function LoginContent() {
   const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-background p-4 overflow-hidden">
+    <div className="relative flex min-h-screen flex-col items-center justify-center bg-background p-4 overflow-hidden">
       {/* Radial glow */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           background: [
-            "radial-gradient(ellipse 60% 50% at 50% 50%,",
-            "hsl(var(--primary) / 0.06) 0%,",
-            "hsl(var(--primary) / 0.03) 30%,",
-            "hsl(var(--primary) / 0.01) 60%,",
+            "radial-gradient(ellipse 70% 55% at 50% 50%,",
+            "hsl(var(--foreground) / 0.045) 0%,",
+            "hsl(var(--foreground) / 0.042) 10%,",
+            "hsl(var(--foreground) / 0.036) 20%,",
+            "hsl(var(--foreground) / 0.028) 32%,",
+            "hsl(var(--foreground) / 0.020) 45%,",
+            "hsl(var(--foreground) / 0.012) 58%,",
+            "hsl(var(--foreground) / 0.006) 72%,",
+            "hsl(var(--foreground) / 0.002) 86%,",
             "transparent 100%)",
           ].join(" "),
         }}
       />
 
-      <div className="flex flex-col items-center">
+      {/* Top-right controls */}
+      <div className="absolute top-4 right-4 z-10 flex items-center gap-1">
+        <a
+          href="https://github.com/nocoo/gecko"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="GitHub repository"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+        >
+          <Github className="h-[18px] w-[18px]" aria-hidden="true" strokeWidth={1.5} />
+        </a>
+        <ThemeToggle />
+      </div>
+
+      <div className="flex flex-col items-center flex-1 justify-center">
         {/* Badge card — vertical card (54/86 aspect) */}
         <div
           className="relative aspect-[54/86] w-72 overflow-hidden rounded-2xl bg-card flex flex-col ring-1 ring-black/[0.08] dark:ring-white/[0.06]"
@@ -57,6 +78,8 @@ function LoginContent() {
               "0 4px 8px rgba(0,0,0,0.04)",
               "0 12px 24px rgba(0,0,0,0.06)",
               "0 24px 48px rgba(0,0,0,0.04)",
+              "0 0 0 0.5px rgba(0,0,0,0.02)",
+              "0 0 60px rgba(0,0,0,0.03)",
             ].join(", "),
           }}
         >
@@ -137,7 +160,7 @@ function LoginContent() {
               onClick={handleGoogleLogin}
               className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-secondary px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-accent cursor-pointer"
             >
-              <svg className="h-4 w-4" viewBox="0 0 24 24">
+              <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
                 <path
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
                   fill="#4285F4"
@@ -167,7 +190,7 @@ function LoginContent() {
           {/* Footer strip */}
           <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center border-t border-border bg-secondary/50 py-2.5">
             <div className="flex items-center gap-1.5">
-              <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <div className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
               <span className="text-[10px] text-muted-foreground font-mono">
                 Secure Connection
               </span>
@@ -175,6 +198,11 @@ function LoginContent() {
           </div>
         </div>
       </div>
+
+      {/* Site footer */}
+      <footer className="py-4 text-center text-xs text-muted-foreground/50">
+        &copy; {new Date().getFullYear()} Gecko
+      </footer>
     </div>
   );
 }
