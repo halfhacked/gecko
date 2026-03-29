@@ -7,10 +7,10 @@ export default function LoadingScreen() {
       <div className="relative animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary dark:bg-[#171717] ring-1 ring-border overflow-hidden p-2">
           <img
-            src="/logo-sidebar.png"
+            src="/logo-24.png"
             alt="Gecko"
-            width={40}
-            height={40}
+            width={24}
+            height={24}
             className="h-full w-full object-contain"
           />
         </div>

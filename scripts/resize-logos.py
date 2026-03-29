@@ -9,7 +9,7 @@ Usage:
     python3 scripts/resize-logos.py
 
 Outputs:
-    1. public/         — <img src> referenced assets (sidebar, login, readme)
+    1. public/         — Basalt B-3 standard sizes (logo-24.png, logo-80.png)
     2. src/app/        — Next.js file-based metadata (icon.png, apple-icon.png,
                          favicon.ico, opengraph-image.png)
     3. mac-client/     — Xcode asset catalog images (AppIcon, GeckoLogo, MenuBarIcon)
@@ -41,12 +41,11 @@ def resize(img: Image.Image, size: int) -> Image.Image:
 
 
 def generate_web_public(img: Image.Image) -> None:
-    """Generate public/ assets referenced by <img src>."""
+    """Generate public/ assets — standard Basalt B-3 sizes."""
     print("── public/ assets ──")
     targets = {
-        "logo-sidebar.png": 40,
-        "logo-login.png": 256,
-        "logo-readme.png": 128,
+        "logo-24.png": 24,
+        "logo-80.png": 80,
     }
     for name, size in targets.items():
         out = PUBLIC / name

@@ -5,3 +5,5 @@ dist
 .wrangler
 *.test.ts
 __tests__
+logo.png
+*.md

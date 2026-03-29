@@ -96,7 +96,7 @@ function LoginContent() {
               />
               <div className="flex items-center gap-2">
                 <img
-                  src="/logo-sidebar.png"
+                  src="/logo-24.png"
                   alt="Gecko"
                   width={16}
                   height={16}
@@ -125,10 +125,10 @@ function LoginContent() {
             {/* Logo */}
             <div className="h-24 w-24 overflow-hidden rounded-full bg-secondary dark:bg-[#171717] ring-1 ring-border p-2.5">
               <img
-                src="/logo-login.png"
+                src="/logo-80.png"
                 alt="Gecko"
-                width={256}
-                height={256}
+                width={80}
+                height={80}
                 className="h-full w-full object-contain"
               />
             </div>

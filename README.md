@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="apps/web-dashboard/public/logo-readme.png" alt="Gecko" width="128" height="128" />
+  <img src="apps/web-dashboard/public/logo-80.png" alt="Gecko" width="80" height="80" />
 </p>
 
 <h1 align="center">Gecko</h1>
