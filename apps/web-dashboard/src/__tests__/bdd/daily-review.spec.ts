@@ -25,15 +25,20 @@ test.describe("Daily Review", () => {
     ).toBeDisabled();
   });
 
-  test.skip("shows empty state for day with no data", async ({ page }) => {
-    // Navigate to a far-future date that won't have data
-    await page.goto("/daily/2099-01-01");
+  test("shows empty state for day with no data", async ({ page }) => {
+    // Navigate to a past date that won't have data (API rejects future dates)
+    await page.goto("/daily/2000-01-01");
 
-    // Wait for page to finish loading (loading spinner gone)
-    await expect(page.getByText("Daily Review")).toBeVisible({ timeout: 15_000 });
+    // Wait for page to finish loading — use heading to avoid strict-mode
+    // violation (sidebar + breadcrumb also contain "Daily Review")
+    await expect(
+      page.getByRole("heading", { name: "Daily Review" })
+    ).toBeVisible({ timeout: 15_000 });
 
     // Should show "No Data" empty state
-    await expect(page.getByText("No Data")).toBeVisible({ timeout: 15_000 });
+    await expect(
+      page.getByRole("heading", { name: "No Data" })
+    ).toBeVisible({ timeout: 15_000 });
     await expect(
       page.getByText("No sessions recorded on")
     ).toBeVisible();
