@@ -77,11 +77,14 @@ describe("/api/apps", () => {
 
       const data = await res.json();
       expect(data.apps).toHaveLength(2);
-      expect(data.apps[0].bundleId).toBe("com.google.Chrome");
-      expect(data.apps[0].appName).toBe("Google Chrome");
-      expect(data.apps[0].totalDuration).toBe(50000);
-      expect(data.apps[0].sessionCount).toBe(100);
-      expect(data.apps[1].bundleId).toBe("com.microsoft.VSCode");
+      const a0 = data.apps[0];
+      const a1 = data.apps[1];
+      if (!a0 || !a1) return;
+      expect(a0.bundleId).toBe("com.google.Chrome");
+      expect(a0.appName).toBe("Google Chrome");
+      expect(a0.totalDuration).toBe(50000);
+      expect(a0.sessionCount).toBe(100);
+      expect(a1.bundleId).toBe("com.microsoft.VSCode");
     });
 
     test("returns empty array when no tracked apps", async () => {
@@ -104,10 +107,12 @@ describe("/api/apps", () => {
       await GET(req);
 
       expect(calls).toHaveLength(1);
-      expect(calls[0].sql).toContain("user_id = ?");
-      expect(calls[0].sql).toContain("bundle_id IS NOT NULL");
-      expect(calls[0].sql).toContain("bundle_id != ''");
-      expect(calls[0].params).toEqual(["e2e-test-user"]);
+      const c0 = calls[0];
+      if (!c0) return;
+      expect(c0.sql).toContain("user_id = ?");
+      expect(c0.sql).toContain("bundle_id IS NOT NULL");
+      expect(c0.sql).toContain("bundle_id != ''");
+      expect(c0.params).toEqual(["e2e-test-user"]);
     });
 
     test("groups by bundle_id and sums duration", async () => {
@@ -117,9 +122,11 @@ describe("/api/apps", () => {
       const req = new Request("http://localhost/api/apps");
       await GET(req);
 
-      expect(calls[0].sql).toContain("GROUP BY bundle_id");
-      expect(calls[0].sql).toContain("SUM(duration)");
-      expect(calls[0].sql).toContain("ORDER BY total_duration DESC");
+      const c0 = calls[0];
+      if (!c0) return;
+      expect(c0.sql).toContain("GROUP BY bundle_id");
+      expect(c0.sql).toContain("SUM(duration)");
+      expect(c0.sql).toContain("ORDER BY total_duration DESC");
     });
   });
 });

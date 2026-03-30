@@ -1,52 +1,20 @@
-# pre-push = L2 (Integration/API E2E) + G2 (Security)
-# NOTE: BDD E2E (Playwright) removed from pre-push — run on-demand via `bun run test:bdd`
+# D1: Verify test database isolation (_test_marker check)
+# L2: API E2E (integration tests)
+# G2: Security gate (osv-scanner + gitleaks)
+# L2 & G2 run in parallel after D1 verification passes
 
-set -euo pipefail
-
-# ----------------------------------------------------------
-# L2: API E2E tests (auto-managed server on port 17028)
-# ----------------------------------------------------------
-if [ -d "apps/web-dashboard/src/__tests__/e2e" ]; then
-  echo "==> [pre-push] L2: Starting E2E server..."
-  scripts/e2e-server.sh start 17028
-
-  echo "==> [pre-push] L2: Running API E2E tests..."
-  E2E_FAILED=0
-  cd apps/web-dashboard
-  RUN_E2E=true bun test src/__tests__/e2e/ --timeout 60000 2>&1 | tail -10 || E2E_FAILED=1
-  cd ../..
-
-  echo "==> [pre-push] L2: Stopping E2E server..."
-  scripts/e2e-server.sh stop
-
-  if [ "$E2E_FAILED" -ne 0 ]; then
-    echo "==> [pre-push] FAILED: API E2E tests failed"
-    exit 1
-  fi
-  echo "==> [pre-push] L2: API E2E tests passed."
-else
-  echo "==> [pre-push] L2: Skipping E2E (no test directory yet)."
-fi
-
-# ----------------------------------------------------------
-# G2: Security scanning
-# ----------------------------------------------------------
-echo "==> [pre-push] G2: Running security scans..."
-
-# G2a: Gitleaks — secrets detection
-echo "==> [pre-push] G2: Checking for leaked secrets (gitleaks)..."
-gitleaks protect --staged --no-banner -c .gitleaks.toml
-echo "==> [pre-push] G2: Gitleaks passed (no leaks detected)."
-
-# G2b: osv-scanner — dependency vulnerability scanning
-echo "==> [pre-push] G2: Scanning dependencies for vulnerabilities (osv-scanner)..."
 cd apps/web-dashboard
-osv-scanner --lockfile=bun.lock 2>&1 || {
-  echo "==> [pre-push] FAILED: osv-scanner found vulnerabilities"
-  cd ..
-  exit 1
-}
-cd ../..
-echo "==> [pre-push] G2: osv-scanner passed (no vulnerabilities)."
 
-echo "==> [pre-push] All checks passed (L2 + G2). Pushing..."
+bun run verify:test-db || exit 1
+
+bun run test:e2e &
+PID_L2=$!
+
+bun run gate:security &
+PID_G2=$!
+
+FAIL=0
+wait $PID_L2 || FAIL=1
+wait $PID_G2 || FAIL=1
+
+exit $FAIL

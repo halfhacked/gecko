@@ -43,7 +43,13 @@ export async function GET(req: Request): Promise<Response> {
   if (days !== null) {
     // Calculate start-of-day N days ago in user's timezone
     const today = todayInTz(tz);
-    const [y, m, d] = today.split("-").map(Number);
+    const todayParts = today.split("-").map(Number);
+    const y = todayParts[0];
+    const m = todayParts[1];
+    const d = todayParts[2];
+    if (y === undefined || m === undefined || d === undefined) {
+      return jsonOk({ period, timezone: tz, timeline: [] });
+    }
     const startDate = new Date(Date.UTC(y, m - 1, d - days));
     const startDateStr = `${startDate.getUTCFullYear()}-${String(startDate.getUTCMonth() + 1).padStart(2, "0")}-${String(startDate.getUTCDate()).padStart(2, "0")}`;
     const startTime = localDateToUTCEpoch(startDateStr, tz);

@@ -62,6 +62,7 @@ describe("dailySummaryRepo.findByUserAndDate", () => {
       ai_score: 75,
       ai_result_json: '{"score":75}',
       ai_model: "test-model",
+      ai_prompt: null,
       ai_generated_at: "2026-02-28T00:00:00Z",
       created_at: "2026-02-27T00:00:00Z",
       updated_at: "2026-02-28T00:00:00Z",
@@ -69,9 +70,13 @@ describe("dailySummaryRepo.findByUserAndDate", () => {
     const { calls } = mockD1([{ results: [row] }]);
     const result = await dailySummaryRepo.findByUserAndDate("u1", "2026-02-27");
 
+    expect(result).not.toBeNull();
+    if (!result) return;
     expect(result).toEqual(row);
-    expect(calls[0].sql).toContain("daily_summaries");
-    expect(calls[0].params).toEqual(["u1", "2026-02-27"]);
+    const c0 = calls[0];
+    if (!c0) return;
+    expect(c0.sql).toContain("daily_summaries");
+    expect(c0.params).toEqual(["u1", "2026-02-27"]);
   });
 });
 
@@ -92,13 +97,15 @@ describe("dailySummaryRepo.upsertAiResult", () => {
     );
 
     expect(calls).toHaveLength(1);
-    expect(calls[0].sql).toContain("INSERT INTO daily_summaries");
-    expect(calls[0].sql).toContain("ON CONFLICT");
+    const c0 = calls[0];
+    if (!c0) return;
+    expect(c0.sql).toContain("INSERT INTO daily_summaries");
+    expect(c0.sql).toContain("ON CONFLICT");
     // Params: id, userId, date, aiScore, aiResultJson, aiModel
-    expect(calls[0].params[1]).toBe("u1");
-    expect(calls[0].params[2]).toBe("2026-02-27");
-    expect(calls[0].params[3]).toBe(80);
-    expect(calls[0].params[4]).toBe('{"score":80}');
-    expect(calls[0].params[5]).toBe("claude-sonnet-4-20250514");
+    expect(c0.params[1]).toBe("u1");
+    expect(c0.params[2]).toBe("2026-02-27");
+    expect(c0.params[3]).toBe(80);
+    expect(c0.params[4]).toBe('{"score":80}');
+    expect(c0.params[5]).toBe("claude-sonnet-4-20250514");
   });
 });

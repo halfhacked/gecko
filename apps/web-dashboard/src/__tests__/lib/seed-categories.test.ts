@@ -69,19 +69,23 @@ describe("seedDefaultCategories", () => {
     expect(result).toBe(true);
 
     // First call: COUNT check
-    expect(calls[0].sql).toContain("COUNT(*)");
-    expect(calls[0].params).toEqual(["user-123"]);
+    const call0 = calls[0];
+    if (!call0) return;
+    expect(call0.sql).toContain("COUNT(*)");
+    expect(call0.params).toEqual(["user-123"]);
 
     // Second call: INSERT 4 default categories
-    expect(calls[1].sql).toContain("INSERT INTO categories");
+    const call1 = calls[1];
+    if (!call1) return;
+    expect(call1.sql).toContain("INSERT INTO categories");
     // 4 categories × 6 params = 24
-    expect(calls[1].params).toHaveLength(24);
+    expect(call1.params).toHaveLength(24);
 
     // Verify is_default=1 is hardcoded in SQL, not in params
-    expect(calls[1].sql).toContain("1, ?");
+    expect(call1.sql).toContain("1, ?");
 
     // Verify all 4 slugs are in the params
-    const slugsInParams = calls[1].params.filter((p) =>
+    const slugsInParams = call1.params.filter((p) =>
       ["system-core", "system-app", "browser", "application"].includes(p as string),
     );
     expect(slugsInParams).toHaveLength(4);
@@ -97,7 +101,9 @@ describe("seedDefaultCategories", () => {
 
     // Only the COUNT query should have been executed
     expect(calls).toHaveLength(1);
-    expect(calls[0].sql).toContain("COUNT(*)");
+    const c0 = calls[0];
+    if (!c0) return;
+    expect(c0.sql).toContain("COUNT(*)");
   });
 
   test("auto-maps known bundle_ids to default categories", async () => {
@@ -151,12 +157,15 @@ describe("seedDefaultCategories", () => {
 
     // All batches except possibly the last should have exactly 25 × 3 = 75 params
     for (let i = 0; i < mappingCalls.length - 1; i++) {
-      expect(mappingCalls[i].params.length).toBe(75);
+      const mc = mappingCalls[i];
+      if (!mc) continue;
+      expect(mc.params.length).toBe(75);
     }
 
     // Last batch should have the remainder
     const lastBatchRows = mappingCount % 25 || 25;
     const lastCall = mappingCalls[mappingCalls.length - 1];
+    if (!lastCall) return;
     expect(lastCall.params.length).toBe(lastBatchRows * 3);
   });
 
@@ -175,7 +184,9 @@ describe("seedDefaultCategories", () => {
     await seedDefaultCategories("user-123");
 
     // Extract the UUIDs from the INSERT params (every 6th param starting at index 0)
-    const insertParams = calls[1].params;
+    const call1 = calls[1];
+    if (!call1) return;
+    const insertParams = call1.params;
     const uuids: string[] = [];
     for (let i = 0; i < insertParams.length; i += 6) {
       uuids.push(insertParams[i] as string);
@@ -207,7 +218,9 @@ describe("seedDefaultCategories", () => {
     await seedDefaultCategories("user-abc");
 
     // user_id is every 6th param starting at index 1 in the INSERT categories call
-    const insertParams = calls[1].params;
+    const call1 = calls[1];
+    if (!call1) return;
+    const insertParams = call1.params;
     for (let i = 1; i < insertParams.length; i += 6) {
       expect(insertParams[i]).toBe("user-abc");
     }

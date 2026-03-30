@@ -74,6 +74,8 @@ describe("/api/keys", () => {
 
       // Should have made an INSERT query
       expect(calls.length).toBe(1);
+      expect(calls[0]).toBeDefined();
+      if (!calls[0]) return;
       expect(calls[0].sql).toContain("INSERT INTO api_keys");
     });
 

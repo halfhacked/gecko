@@ -169,7 +169,9 @@ describe("exportUserData — session pagination", () => {
     // Only 1 query for sessions (+ other tables in parallel)
     const sessionCalls = calls.filter((c) => c.sql.includes("focus_sessions"));
     expect(sessionCalls).toHaveLength(1);
-    expect(sessionCalls[0].params).toEqual(["u1", PAGE_SIZE, 0]);
+    const sc0 = sessionCalls[0];
+    if (!sc0) return;
+    expect(sc0.params).toEqual(["u1", PAGE_SIZE, 0]);
   });
 
   test("paginates when sessions = PAGE_SIZE (needs second query to confirm end)", async () => {
@@ -187,8 +189,11 @@ describe("exportUserData — session pagination", () => {
     expect(env.focusSessions).toHaveLength(PAGE_SIZE);
     const sessionCalls = calls.filter((c) => c.sql.includes("focus_sessions"));
     expect(sessionCalls).toHaveLength(2);
-    expect(sessionCalls[0].params).toEqual(["u1", PAGE_SIZE, 0]);
-    expect(sessionCalls[1].params).toEqual(["u1", PAGE_SIZE, PAGE_SIZE]);
+    const sc0 = sessionCalls[0];
+    const sc1 = sessionCalls[1];
+    if (!sc0 || !sc1) return;
+    expect(sc0.params).toEqual(["u1", PAGE_SIZE, 0]);
+    expect(sc1.params).toEqual(["u1", PAGE_SIZE, PAGE_SIZE]);
   });
 
   test("paginates across multiple full pages", async () => {
@@ -209,9 +214,13 @@ describe("exportUserData — session pagination", () => {
 
     expect(env.focusSessions).toHaveLength(PAGE_SIZE * 2 + 100);
     // First session from first page
-    expect(env.focusSessions[0].id).toBe("s-0");
+    const fs0 = env.focusSessions[0];
+    if (!fs0) return;
+    expect(fs0.id).toBe("s-0");
     // Last session from last page
-    expect(env.focusSessions[env.focusSessions.length - 1].id).toBe(`s-${PAGE_SIZE * 2 + 99}`);
+    const fsLast = env.focusSessions[env.focusSessions.length - 1];
+    if (!fsLast) return;
+    expect(fsLast.id).toBe(`s-${PAGE_SIZE * 2 + 99}`);
   });
 });
 

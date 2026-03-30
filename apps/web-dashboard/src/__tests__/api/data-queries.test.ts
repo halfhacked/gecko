@@ -80,19 +80,23 @@ describe("GET /api/sessions", () => {
 
     const data = await res.json();
     expect(data.sessions).toHaveLength(1);
-    expect(data.sessions[0].appName).toBe("Chrome");
+    const s0 = data.sessions[0];
+    if (!s0) return;
+    expect(s0.appName).toBe("Chrome");
   });
 
   test("defaults to limit=50, offset=0", async () => {
     const { calls } = mockD1([[]]);
     const { GET } = await import("../../app/api/sessions/route");
-
     const req = new Request("http://localhost/api/sessions");
     await GET(req);
 
-    expect(calls[0].sql).toContain("LIMIT");
-    expect(calls[0].params).toContain(50);
-    expect(calls[0].params).toContain(0);
+    expect(calls).toHaveLength(1);
+    const c0 = calls[0];
+    if (!c0) return;
+    expect(c0.sql).toContain("LIMIT");
+    expect(c0.params).toContain(50);
+    expect(c0.params).toContain(0);
   });
 
   test("respects custom limit and offset", async () => {
@@ -102,8 +106,11 @@ describe("GET /api/sessions", () => {
     const req = new Request("http://localhost/api/sessions?limit=10&offset=20");
     await GET(req);
 
-    expect(calls[0].params).toContain(10);
-    expect(calls[0].params).toContain(20);
+    expect(calls).toHaveLength(1);
+    const c0 = calls[0];
+    if (!c0) return;
+    expect(c0.params).toContain(10);
+    expect(c0.params).toContain(20);
   });
 
   test("caps limit at 200", async () => {
@@ -113,7 +120,10 @@ describe("GET /api/sessions", () => {
     const req = new Request("http://localhost/api/sessions?limit=999");
     await GET(req);
 
-    expect(calls[0].params).toContain(200);
+    expect(calls).toHaveLength(1);
+    const c0 = calls[0];
+    if (!c0) return;
+    expect(c0.params).toContain(200);
   });
 
   test("computes end_time from start_time + duration", async () => {
@@ -147,13 +157,17 @@ describe("GET /api/sessions", () => {
     const data = await res.json();
 
     // Verify the SQL uses computed end_time expression
-    expect(calls[0].sql).toContain("(start_time + duration) AS end_time");
+    const call0 = calls[0];
+    if (!call0) return;
+    expect(call0.sql).toContain("(start_time + duration) AS end_time");
 
     // Verify the API response has the correct computed value
     expect(data.sessions).toHaveLength(1);
-    expect(data.sessions[0].endTime).toBe(startTime + duration);
-    expect(data.sessions[0].endTime).toBe(1740600300.5);
-    expect(data.sessions[0].duration).toBe(duration);
+    const s0 = data.sessions[0];
+    if (!s0) return;
+    expect(s0.endTime).toBe(startTime + duration);
+    expect(s0.endTime).toBe(1740600300.5);
+    expect(s0.duration).toBe(duration);
   });
 
   test("handles null end_time rows (legacy data without stored end_time)", async () => {
@@ -187,6 +201,7 @@ describe("GET /api/sessions", () => {
     const data = await res.json();
 
     const session = data.sessions[0];
+    if (!session) return;
     // end_time should always be start_time + duration regardless of stored value
     expect(session.endTime).toBe(startTime + duration);
     expect(session.isFullScreen).toBe(true);
@@ -225,7 +240,9 @@ describe("GET /api/stats", () => {
     expect(data.totalDuration).toBe(50000.0);
     expect(data.longestSession).toBe(3600.0);
     expect(data.topApps).toHaveLength(2);
-    expect(data.topApps[0].appName).toBe("Chrome");
+    const topApp = data.topApps[0];
+    if (!topApp) return;
+    expect(topApp.appName).toBe("Chrome");
   });
 
   test("handles no data gracefully", async () => {
@@ -265,7 +282,9 @@ describe("GET /api/stats", () => {
     expect(data.period).toBe("today");
     // calls[0] = timezone lookup, calls[1] = total stats query
     // Data query should have start_time filter
-    expect(calls[1].params.length).toBe(2); // user_id + start_time
+    const call1 = calls[1];
+    if (!call1) return;
+    expect(call1.params.length).toBe(2); // user_id + start_time
   });
 
   test("week period includes start_time filter", async () => {
@@ -283,8 +302,10 @@ describe("GET /api/stats", () => {
 
     expect(data.period).toBe("week");
     // Should have user_id + start_time params
-    expect(calls[1].params.length).toBe(2);
-    expect(calls[1].sql).toContain("start_time >= ?");
+    const c1 = calls[1];
+    if (!c1) return;
+    expect(c1.params.length).toBe(2);
+    expect(c1.sql).toContain("start_time >= ?");
   });
 
   test("month period includes start_time filter", async () => {
@@ -301,8 +322,10 @@ describe("GET /api/stats", () => {
     const data = await res.json();
 
     expect(data.period).toBe("month");
-    expect(calls[1].params.length).toBe(2);
-    expect(calls[1].sql).toContain("start_time >= ?");
+    const c1 = calls[1];
+    if (!c1) return;
+    expect(c1.params.length).toBe(2);
+    expect(c1.sql).toContain("start_time >= ?");
   });
 
   test("invalid period falls back to today", async () => {
@@ -336,7 +359,9 @@ describe("GET /api/stats", () => {
 
     expect(data.period).toBe("all");
     // Only user_id param, no start_time
-    expect(calls[1].params.length).toBe(1);
+    const c1 = calls[1];
+    if (!c1) return;
+    expect(c1.params.length).toBe(1);
   });
 
   test("handles null totals gracefully", async () => {
@@ -387,9 +412,11 @@ describe("GET /api/sync/status", () => {
 
     const data = await res.json();
     expect(data.devices).toHaveLength(1);
-    expect(data.devices[0].deviceId).toBe("dev-1");
-    expect(data.devices[0].name).toBe("MacBook Pro");
-    expect(data.devices[0].lastSync).toBe("2026-01-02T12:00:00.000Z");
+    const dev = data.devices[0];
+    if (!dev) return;
+    expect(dev.deviceId).toBe("dev-1");
+    expect(dev.name).toBe("MacBook Pro");
+    expect(dev.lastSync).toBe("2026-01-02T12:00:00.000Z");
   });
 
   test("handles no sync history", async () => {

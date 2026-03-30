@@ -62,9 +62,11 @@ describe("backyRepo.getPushConfig", () => {
       webhookUrl: "https://backy.example.com/webhook",
       apiKey: "sk-test-123",
     });
-    expect(calls[0].sql).toContain("backy.webhookUrl");
-    expect(calls[0].sql).toContain("backy.apiKey");
-    expect(calls[0].params).toEqual(["u1"]);
+    const call0 = calls[0];
+    if (!call0) return;
+    expect(call0.sql).toContain("backy.webhookUrl");
+    expect(call0.sql).toContain("backy.apiKey");
+    expect(call0.params).toEqual(["u1"]);
   });
 
   test("returns null when only webhookUrl exists", async () => {
@@ -99,14 +101,17 @@ describe("backyRepo.savePushConfig", () => {
     await backyRepo.savePushConfig("u1", "https://backy.example.com/webhook", "sk-test-123");
 
     expect(calls).toHaveLength(2);
-    expect(calls[0].sql).toContain("INSERT INTO settings");
-    expect(calls[0].sql).toContain("backy.webhookUrl");
-    expect(calls[0].params[0]).toBe("u1");
-    expect(calls[0].params[1]).toBe("https://backy.example.com/webhook");
+    const c0 = calls[0];
+    const c1 = calls[1];
+    if (!c0 || !c1) return;
+    expect(c0.sql).toContain("INSERT INTO settings");
+    expect(c0.sql).toContain("backy.webhookUrl");
+    expect(c0.params[0]).toBe("u1");
+    expect(c0.params[1]).toBe("https://backy.example.com/webhook");
 
-    expect(calls[1].sql).toContain("backy.apiKey");
-    expect(calls[1].params[0]).toBe("u1");
-    expect(calls[1].params[1]).toBe("sk-test-123");
+    expect(c1.sql).toContain("backy.apiKey");
+    expect(c1.params[0]).toBe("u1");
+    expect(c1.params[1]).toBe("sk-test-123");
   });
 });
 
@@ -120,8 +125,10 @@ describe("backyRepo.getPullKey", () => {
     const key = await backyRepo.getPullKey("u1");
 
     expect(key).toBe("bpk_abc123");
-    expect(calls[0].sql).toContain("backy.pullKey");
-    expect(calls[0].params).toEqual(["u1"]);
+    const call0 = calls[0];
+    if (!call0) return;
+    expect(call0.sql).toContain("backy.pullKey");
+    expect(call0.params).toEqual(["u1"]);
   });
 
   test("returns null when not found", async () => {
@@ -141,10 +148,12 @@ describe("backyRepo.savePullKey", () => {
     await backyRepo.savePullKey("u1", "bpk_new-key");
 
     expect(calls).toHaveLength(1);
-    expect(calls[0].sql).toContain("INSERT INTO settings");
-    expect(calls[0].sql).toContain("backy.pullKey");
-    expect(calls[0].params[0]).toBe("u1");
-    expect(calls[0].params[1]).toBe("bpk_new-key");
+    const call0 = calls[0];
+    if (!call0) return;
+    expect(call0.sql).toContain("INSERT INTO settings");
+    expect(call0.sql).toContain("backy.pullKey");
+    expect(call0.params[0]).toBe("u1");
+    expect(call0.params[1]).toBe("bpk_new-key");
   });
 });
 
@@ -158,9 +167,11 @@ describe("backyRepo.deletePullKey", () => {
     const result = await backyRepo.deletePullKey("u1");
 
     expect(result).toBe(true);
-    expect(calls[0].sql).toContain("DELETE FROM settings");
-    expect(calls[0].sql).toContain("backy.pullKey");
-    expect(calls[0].params).toEqual(["u1"]);
+    const call0 = calls[0];
+    if (!call0) return;
+    expect(call0.sql).toContain("DELETE FROM settings");
+    expect(call0.sql).toContain("backy.pullKey");
+    expect(call0.params).toEqual(["u1"]);
   });
 
   test("returns false when no key existed", async () => {
@@ -180,8 +191,10 @@ describe("backyRepo.findUserByPullKey", () => {
     const userId = await backyRepo.findUserByPullKey("bpk_abc123");
 
     expect(userId).toBe("u1");
-    expect(calls[0].sql).toContain("backy.pullKey");
-    expect(calls[0].params).toEqual(["bpk_abc123"]);
+    const call0 = calls[0];
+    if (!call0) return;
+    expect(call0.sql).toContain("backy.pullKey");
+    expect(call0.params).toEqual(["bpk_abc123"]);
   });
 
   test("returns null when no match", async () => {

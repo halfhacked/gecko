@@ -16,7 +16,13 @@ function periodStartTime(period: Period, tz: string): number | null {
   if (period === "all") return null;
 
   const today = todayInTz(tz);
-  const [y, m, d] = today.split("-").map(Number);
+  const todayParts = today.split("-").map(Number);
+  const y = todayParts[0];
+  const m = todayParts[1];
+  const d = todayParts[2];
+  if (y === undefined || m === undefined || d === undefined) {
+    return localDateToUTCEpoch(today, tz);
+  }
 
   if (period === "today") {
     return localDateToUTCEpoch(today, tz);

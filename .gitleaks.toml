@@ -1,9 +1,6 @@
-# Gitleaks configuration — suppress test fixture false positives
-# https://github.com/gitleaks/gitleaks#configuration
-
-[[allowlists]]
-description = "test fixtures: fake API keys and D1 setting keys in test files"
-paths = [
-  '''__tests__/api/analyze-helpers\.test\.ts''',
-  '''__tests__/e2e/ai-settings\.test\.ts''',
-]
+[allowlist]
+  description = "Global allow list for false positives"
+  paths = [
+    '''apps/web-dashboard/src/__tests__/api/analyze-helpers\.test\.ts''',
+    '''apps/web-dashboard/src/__tests__/e2e/ai-settings\.test\.ts''',
+  ]

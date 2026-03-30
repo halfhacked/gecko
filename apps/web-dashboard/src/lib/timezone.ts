@@ -31,7 +31,13 @@ export function getDateBoundsEpoch(
   const start = localDateToUTCEpoch(dateStr, tz);
 
   // Compute next day's date string, then get its midnight epoch
-  const [y, m, d] = dateStr.split("-").map(Number);
+  const parts = dateStr.split("-").map(Number);
+  const y = parts[0];
+  const m = parts[1];
+  const d = parts[2];
+  if (y === undefined || m === undefined || d === undefined) {
+    throw new Error(`Invalid date string: ${dateStr}`);
+  }
   const nextDay = new Date(Date.UTC(y, m - 1, d + 1));
   const nextDateStr = formatDateParts(
     nextDay.getUTCFullYear(),
@@ -60,7 +66,13 @@ export function getDateBoundsEpoch(
  */
 export function localDateToUTCEpoch(dateStr: string, tz: string): number {
   // Parse date parts
-  const [year, month, day] = dateStr.split("-").map(Number);
+  const parts = dateStr.split("-").map(Number);
+  const year = parts[0];
+  const month = parts[1];
+  const day = parts[2];
+  if (year === undefined || month === undefined || day === undefined) {
+    throw new Error(`Invalid date string: ${dateStr}`);
+  }
 
   // First estimate: probe offset using noon on the same date (safe from DST gaps)
   const noonOffset = getTimezoneOffsetMinutes(year, month, day, tz, 12);
@@ -220,7 +232,13 @@ export function todayInTz(tz: string): string {
 export function yesterdayInTz(tz: string): string {
   // Get today in tz, then subtract 1 day
   const today = todayInTz(tz);
-  const [y, m, d] = today.split("-").map(Number);
+  const todayParts = today.split("-").map(Number);
+  const y = todayParts[0];
+  const m = todayParts[1];
+  const d = todayParts[2];
+  if (y === undefined || m === undefined || d === undefined) {
+    throw new Error(`Invalid date string from todayInTz: ${today}`);
+  }
   const prev = new Date(Date.UTC(y, m - 1, d - 1));
   return formatDateParts(
     prev.getUTCFullYear(),
@@ -272,7 +290,10 @@ export function sqlDateExpr(
 ): { expr: string; offsetSec: number } {
   let y: number, m: number, d: number;
   if (refDateStr) {
-    [y, m, d] = refDateStr.split("-").map(Number);
+    const refParts = refDateStr.split("-").map(Number);
+    y = refParts[0] ?? 0;
+    m = refParts[1] ?? 1;
+    d = refParts[2] ?? 1;
   } else {
     const now = new Date();
     y = now.getUTCFullYear();

@@ -343,7 +343,9 @@ function DailyTooltip({
   payload?: Array<{ payload: { label: string; duration: number; sessions: number; apps: number } }>;
 }) {
   if (!active || !payload?.length) return null;
-  const data = payload[0].payload;
+  const entry = payload[0];
+  if (!entry) return null;
+  const data = entry.payload;
 
   return (
     <div className="rounded-md border bg-popover px-3 py-2 text-sm shadow-md">
@@ -442,7 +444,9 @@ function DonutTooltip({
   total: number;
 }) {
   if (!active || !payload?.length) return null;
-  const data = payload[0].payload;
+  const entry = payload[0];
+  if (!entry) return null;
+  const data = entry.payload;
   const pct = total > 0 ? ((data.value / total) * 100).toFixed(1) : "0";
 
   return (

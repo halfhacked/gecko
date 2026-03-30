@@ -78,9 +78,12 @@ describe("/api/apps/notes", () => {
 
       const data = await res.json();
       expect(data.notes).toHaveLength(2);
-      expect(data.notes[0].bundleId).toBe("com.google.Chrome");
-      expect(data.notes[0].note).toBe("Work browser");
-      expect(data.notes[1].bundleId).toBe("com.microsoft.VSCode");
+      const n0 = data.notes[0];
+      const n1 = data.notes[1];
+      if (!n0 || !n1) return;
+      expect(n0.bundleId).toBe("com.google.Chrome");
+      expect(n0.note).toBe("Work browser");
+      expect(n1.bundleId).toBe("com.microsoft.VSCode");
     });
 
     test("returns empty array when no notes exist", async () => {
@@ -119,8 +122,10 @@ describe("/api/apps/notes", () => {
       expect(data.note).toBe("Work browser for documentation");
 
       expect(calls.length).toBe(1);
-      expect(calls[0].sql).toContain("INSERT INTO app_notes");
-      expect(calls[0].sql).toContain("ON CONFLICT");
+      const c0 = calls[0];
+      if (!c0) return;
+      expect(c0.sql).toContain("INSERT INTO app_notes");
+      expect(c0.sql).toContain("ON CONFLICT");
     });
 
     test("deletes note when note is empty string", async () => {
@@ -144,7 +149,9 @@ describe("/api/apps/notes", () => {
       expect(data.note).toBe("");
 
       expect(calls.length).toBe(1);
-      expect(calls[0].sql).toContain("DELETE FROM app_notes");
+      const c0 = calls[0];
+      if (!c0) return;
+      expect(c0.sql).toContain("DELETE FROM app_notes");
     });
 
     test("deletes note when note is whitespace only", async () => {
@@ -275,8 +282,10 @@ describe("/api/apps/notes", () => {
       const data = await res.json();
       expect(data.deleted).toBe(true);
 
-      expect(calls[0].sql).toContain("DELETE FROM app_notes");
-      expect(calls[0].params).toContain("com.google.Chrome");
+      const c0 = calls[0];
+      if (!c0) return;
+      expect(c0.sql).toContain("DELETE FROM app_notes");
+      expect(c0.params).toContain("com.google.Chrome");
     });
 
     test("returns deleted=false when note does not exist", async () => {

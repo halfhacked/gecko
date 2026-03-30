@@ -95,7 +95,7 @@ describe("api-helpers", () => {
   // ---------------------------------------------------------------------------
 
   describe("requireSession() actual", () => {
-    let requireSession: () => ReturnType<typeof import("../../lib/api-helpers").then>;
+    let requireSession: typeof import("../../lib/api-helpers")["requireSession"];
 
     beforeEach(async () => {
       process.env.E2E_SKIP_AUTH = "true";

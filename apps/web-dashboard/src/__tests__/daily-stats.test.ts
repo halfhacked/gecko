@@ -23,12 +23,11 @@ function session(
   return {
     id: crypto.randomUUID(),
     app_name: overrides.appName,
-    bundle_id: overrides.bundleId ?? null,
-    window_title: overrides.windowTitle ?? "",
+    bundle_id: overrides.bundle_id ?? null,
+    window_title: overrides.window_title ?? "",
     url: overrides.url ?? null,
     start_time: overrides.startTime,
     duration: overrides.duration,
-    ...overrides,
   };
 }
 
@@ -304,9 +303,9 @@ describe("computeDailyStats", () => {
 
   test("computes correct totals for multiple sessions", () => {
     const rows = [
-      session({ appName: "Chrome", bundleId: "com.google.Chrome", startTime: 1000, duration: 600 }),
-      session({ appName: "VSCode", bundleId: "com.microsoft.VSCode", startTime: 1700, duration: 1200 }),
-      session({ appName: "Chrome", bundleId: "com.google.Chrome", startTime: 3000, duration: 300 }),
+      session({ appName: "Chrome", bundle_id: "com.google.Chrome", startTime: 1000, duration: 600 }),
+      session({ appName: "VSCode", bundle_id: "com.microsoft.VSCode", startTime: 1700, duration: 1200 }),
+      session({ appName: "Chrome", bundle_id: "com.google.Chrome", startTime: 3000, duration: 300 }),
     ];
     const stats = computeDailyStats("2026-02-27", rows);
 
@@ -334,8 +333,8 @@ describe("computeDailyStats", () => {
     const rows = [
       session({
         appName: "Chrome",
-        bundleId: "com.google.Chrome",
-        windowTitle: "GitHub",
+        bundle_id: "com.google.Chrome",
+        window_title: "GitHub",
         url: "https://github.com",
         startTime: 1000,
         duration: 600,

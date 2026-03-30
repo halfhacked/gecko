@@ -80,15 +80,17 @@ describe("fetchSessionsForDate", () => {
     await fetchSessionsForDate("user-1", DATE, TZ);
 
     expect(calls).toHaveLength(1);
-    const sql = calls[0].sql;
+    const call0 = calls[0];
+    expect(call0).toBeDefined();
 
+    if (!call0) return;
     // Must have both the normal range clause and the cross-midnight clause
-    expect(sql).toContain("start_time >= ?");
-    expect(sql).toContain("start_time < ?");
-    expect(sql).toContain("start_time + duration > ?");
+    expect(call0.sql).toContain("start_time >= ?");
+    expect(call0.sql).toContain("start_time < ?");
+    expect(call0.sql).toContain("start_time + duration > ?");
 
     // Verify the params: [userId, dayStart, dayEnd, dayStart, dayStart]
-    expect(calls[0].params).toEqual(["user-1", DAY_START, DAY_END, DAY_START, DAY_START]);
+    expect(call0.params).toEqual(["user-1", DAY_START, DAY_END, DAY_START, DAY_START]);
   });
 
   test("returns normal sessions without clipping", async () => {
@@ -109,9 +111,11 @@ describe("fetchSessionsForDate", () => {
     const rows = await fetchSessionsForDate("user-1", DATE, TZ);
 
     expect(rows).toHaveLength(1);
+    const r0 = rows[0];
+    if (!r0) return;
     // Should be unchanged — no clipping needed
-    expect(rows[0].start_time).toBe(session.start_time);
-    expect(rows[0].duration).toBe(session.duration);
+    expect(r0.start_time).toBe(session.start_time);
+    expect(r0.duration).toBe(session.duration);
   });
 
   test("clips cross-midnight session to day start", async () => {
@@ -136,14 +140,16 @@ describe("fetchSessionsForDate", () => {
     const rows = await fetchSessionsForDate("user-1", DATE, TZ);
 
     expect(rows).toHaveLength(1);
+    const r0 = rows[0];
+    if (!r0) return;
     // Should be clipped: start moved to dayStart, duration shortened
-    expect(rows[0].start_time).toBe(DAY_START); // clipped to 00:00 CST
+    expect(r0.start_time).toBe(DAY_START); // clipped to 00:00 CST
     // Original end = prevDayStart + totalDuration
     const origEnd = prevDayStart + totalDuration;
     const expectedDuration = origEnd - DAY_START; // portion within the day
-    expect(rows[0].duration).toBe(expectedDuration);
+    expect(r0.duration).toBe(expectedDuration);
     // Sanity: ~5h26m = 19560s
-    expect(rows[0].duration).toBeCloseTo(5 * 3600 + 26 * 60, 0);
+    expect(r0.duration).toBeCloseTo(5 * 3600 + 26 * 60, 0);
   });
 
   test("clips session extending past day end", async () => {
@@ -165,9 +171,11 @@ describe("fetchSessionsForDate", () => {
     const rows = await fetchSessionsForDate("user-1", DATE, TZ);
 
     expect(rows).toHaveLength(1);
+    const r0 = rows[0];
+    if (!r0) return;
     // Should be clipped at dayEnd
-    expect(rows[0].start_time).toBe(lateStart); // start unchanged
-    expect(rows[0].duration).toBe(3600); // only 1h within the day (23:00-24:00)
+    expect(r0.start_time).toBe(lateStart); // start unchanged
+    expect(r0.duration).toBe(3600); // only 1h within the day (23:00-24:00)
   });
 
   test("clips both start and end for session spanning entire day", async () => {
@@ -188,8 +196,10 @@ describe("fetchSessionsForDate", () => {
     const rows = await fetchSessionsForDate("user-1", DATE, TZ);
 
     expect(rows).toHaveLength(1);
-    expect(rows[0].start_time).toBe(DAY_START);
-    expect(rows[0].duration).toBe(DAY_END - DAY_START); // exactly 24h
+    const r0 = rows[0];
+    if (!r0) return;
+    expect(r0.start_time).toBe(DAY_START);
+    expect(r0.duration).toBe(DAY_END - DAY_START); // exactly 24h
   });
 
   test("filters out zero-duration sessions after clipping", async () => {
@@ -245,14 +255,18 @@ describe("fetchSessionsForDate", () => {
 
     expect(rows).toHaveLength(2);
 
+    const first = rows[0];
+    const second = rows[1];
+    if (!first || !second) return;
+
     // First session: clipped cross-midnight
-    expect(rows[0].id).toBe("s-cross");
-    expect(rows[0].start_time).toBe(DAY_START);
+    expect(first.id).toBe("s-cross");
+    expect(first.start_time).toBe(DAY_START);
 
     // Second session: unchanged
-    expect(rows[1].id).toBe("s-normal");
-    expect(rows[1].start_time).toBe(normalSession.start_time);
-    expect(rows[1].duration).toBe(normalSession.duration);
+    expect(second.id).toBe("s-normal");
+    expect(second.start_time).toBe(normalSession.start_time);
+    expect(second.duration).toBe(normalSession.duration);
   });
 
   test("preserves all fields when clipping (id, app_name, bundle_id, etc.)", async () => {
@@ -272,13 +286,15 @@ describe("fetchSessionsForDate", () => {
     const rows = await fetchSessionsForDate("user-1", DATE, TZ);
 
     expect(rows).toHaveLength(1);
-    expect(rows[0].id).toBe("s-preserve");
-    expect(rows[0].app_name).toBe("loginwindow");
-    expect(rows[0].bundle_id).toBe("com.apple.loginwindow");
-    expect(rows[0].window_title).toBe("Login Window");
-    expect(rows[0].url).toBeNull();
+    const r0 = rows[0];
+    if (!r0) return;
+    expect(r0.id).toBe("s-preserve");
+    expect(r0.app_name).toBe("loginwindow");
+    expect(r0.bundle_id).toBe("com.apple.loginwindow");
+    expect(r0.window_title).toBe("Login Window");
+    expect(r0.url).toBeNull();
     // Clipped values
-    expect(rows[0].start_time).toBe(DAY_START);
-    expect(rows[0].duration).toBe(3600); // 1h within the day
+    expect(r0.start_time).toBe(DAY_START);
+    expect(r0.duration).toBe(3600); // 1h within the day
   });
 });

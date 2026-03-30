@@ -65,6 +65,9 @@ export async function POST(req: Request): Promise<Response> {
   // Validate required fields on each session
   for (let i = 0; i < sessions.length; i++) {
     const session = sessions[i];
+    if (!session) {
+      return jsonError(`Session at index ${i} is null or undefined`, 400);
+    }
     for (const field of REQUIRED_FIELDS) {
       if (session[field] === undefined || session[field] === null) {
         return jsonError(

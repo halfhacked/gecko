@@ -122,7 +122,14 @@ export async function verifyTestDatabase(): Promise<void> {
       "SELECT key, value FROM _test_marker WHERE key = ?",
       ["env"]
     );
-    if (rows.length === 0 || rows[0].value !== "test") {
+    if (rows.length === 0) {
+      throw new Error(
+        `D1 test marker check failed: database ${config.databaseId} is NOT a test instance. ` +
+          `Expected _test_marker.env = 'test'. Refusing to run E2E tests against production data.`
+      );
+    }
+    const marker = rows[0];
+    if (!marker || marker.value !== "test") {
       throw new Error(
         `D1 test marker check failed: database ${config.databaseId} is NOT a test instance. ` +
           `Expected _test_marker.env = 'test'. Refusing to run E2E tests against production data.`

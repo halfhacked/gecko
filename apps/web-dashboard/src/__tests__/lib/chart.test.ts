@@ -38,9 +38,13 @@ describe("palette", () => {
   });
 
   test("chart named colors match CHART_COLORS values", () => {
-    expect(chart.green).toBe(CHART_COLORS[0]);
-    expect(chart.sky).toBe(CHART_COLORS[1]);
-    expect(chart.lime).toBe(CHART_COLORS[9]);
+    const c0 = CHART_COLORS[0];
+    const c1 = CHART_COLORS[1];
+    const c9 = CHART_COLORS[9];
+    if (!c0 || !c1 || !c9) return;
+    expect(chart.green).toBe(c0);
+    expect(chart.sky).toBe(c1);
+    expect(chart.lime).toBe(c9);
   });
 
   test("withAlpha returns correct format", () => {
@@ -61,13 +65,19 @@ describe("palette", () => {
 
 describe("chart-config", () => {
   test("getChartColor returns correct color for index", () => {
-    expect(getChartColor(0)).toBe(CHART_COLORS[0]);
-    expect(getChartColor(9)).toBe(CHART_COLORS[9]);
+    const c0 = CHART_COLORS[0];
+    const c9 = CHART_COLORS[9];
+    if (!c0 || !c9) return;
+    expect(getChartColor(0)).toBe(c0);
+    expect(getChartColor(9)).toBe(c9);
   });
 
   test("getChartColor wraps around past 10", () => {
-    expect(getChartColor(10)).toBe(CHART_COLORS[0]);
-    expect(getChartColor(11)).toBe(CHART_COLORS[1]);
+    const c0 = CHART_COLORS[0];
+    const c1 = CHART_COLORS[1];
+    if (!c0 || !c1) return;
+    expect(getChartColor(10)).toBe(c0);
+    expect(getChartColor(11)).toBe(c1);
   });
 
   test("AXIS_CONFIG disables axis and tick lines", () => {

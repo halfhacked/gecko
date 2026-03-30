@@ -1,0 +1,4 @@
+# False positives — D1 KV key names, not actual secrets
+apps/web-dashboard/src/__tests__/api/analyze-helpers.test.ts:generic-api-key:313
+apps/web-dashboard/src/__tests__/api/analyze-helpers.test.ts:generic-api-key:314
+apps/web-dashboard/src/__tests__/e2e/ai-settings.test.ts:generic-api-key:141

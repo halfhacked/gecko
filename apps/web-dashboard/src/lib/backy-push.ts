@@ -69,7 +69,7 @@ export async function executePush(
   const formData = new FormData();
   formData.append(
     "file",
-    new Blob([compressed], { type: "application/gzip" }),
+    new Blob([compressed as BlobPart], { type: "application/gzip" }),
     fileName,
   );
   // Backy expects: dev | prod | staging | test

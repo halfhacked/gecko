@@ -138,7 +138,11 @@ describe("/api/backy/config PUT", () => {
 
     // Should have made 2 D1 upsert calls (webhookUrl + apiKey)
     expect(d1Calls).toHaveLength(2);
+    expect(d1Calls[0]).toBeDefined();
+    if (!d1Calls[0]) return;
     expect(d1Calls[0].sql).toContain("backy.webhookUrl");
+    expect(d1Calls[1]).toBeDefined();
+    if (!d1Calls[1]) return;
     expect(d1Calls[1].sql).toContain("backy.apiKey");
   });
 
@@ -232,6 +236,8 @@ describe("/api/backy/test POST", () => {
 
     // Verify external HEAD request was made
     expect(externalCalls).toHaveLength(1);
+    expect(externalCalls[0]).toBeDefined();
+    if (!externalCalls[0]) return;
     expect(externalCalls[0].url).toBe("https://backy.example.com/webhook");
     expect(externalCalls[0].method).toBe("HEAD");
   });

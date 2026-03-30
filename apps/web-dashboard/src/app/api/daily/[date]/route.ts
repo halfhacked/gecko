@@ -26,7 +26,13 @@ function validateDate(dateStr: string, tz: string): string | null {
     return "Invalid date format. Use YYYY-MM-DD.";
   }
   // Basic validity check — parse as UTC to avoid server-tz dependency
-  const [y, m, d] = dateStr.split("-").map(Number);
+  const parts = dateStr.split("-").map(Number);
+  const y = parts[0];
+  const m = parts[1];
+  const d = parts[2];
+  if (y === undefined || m === undefined || d === undefined) {
+    return "Invalid date.";
+  }
   const test = new Date(Date.UTC(y, m - 1, d));
   if (isNaN(test.getTime()) || test.getUTCFullYear() !== y || test.getUTCMonth() !== m - 1 || test.getUTCDate() !== d) {
     return "Invalid date.";

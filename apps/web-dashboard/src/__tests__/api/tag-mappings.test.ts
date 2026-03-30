@@ -70,8 +70,10 @@ describe("/api/tags/mappings", () => {
 
       const data = await res.json();
       expect(data.mappings).toHaveLength(1);
-      expect(data.mappings[0].bundleId).toBe("com.google.Chrome");
-      expect(data.mappings[0].tagId).toBe("tag-work");
+      const m0 = data.mappings[0];
+      if (!m0) return;
+      expect(m0.bundleId).toBe("com.google.Chrome");
+      expect(m0.tagId).toBe("tag-work");
     });
 
     test("returns empty array when no mappings", async () => {
@@ -108,7 +110,9 @@ describe("/api/tags/mappings", () => {
       expect(data.upserted).toBe(2);
 
       expect(calls.length).toBe(1);
-      expect(calls[0].sql).toContain("INSERT OR REPLACE");
+      const c0 = calls[0];
+      if (!c0) return;
+      expect(c0.sql).toContain("INSERT OR REPLACE");
     });
 
     test("returns 400 when mappings array is empty", async () => {
@@ -164,10 +168,13 @@ describe("/api/tags/mappings", () => {
       expect(data.upserted).toBe(40);
 
       expect(calls.length).toBe(2);
+      const c0 = calls[0];
+      const c1 = calls[1];
+      if (!c0 || !c1) return;
       // First batch: 33 * 3 = 99 params
-      expect(calls[0].params.length).toBe(99);
+      expect(c0.params.length).toBe(99);
       // Second batch: 7 * 3 = 21 params
-      expect(calls[1].params.length).toBe(21);
+      expect(c1.params.length).toBe(21);
     });
   });
 
@@ -201,12 +208,15 @@ describe("/api/tags/mappings", () => {
       expect(data.updated).toBe(1);
 
       // First call: DELETE
-      expect(calls[0].sql).toContain("DELETE FROM app_tag_mappings");
-      expect(calls[0].params).toContain("com.google.Chrome");
+      const call0 = calls[0];
+      const call1 = calls[1];
+      if (!call0 || !call1) return;
+      expect(call0.sql).toContain("DELETE FROM app_tag_mappings");
+      expect(call0.params).toContain("com.google.Chrome");
 
       // Second call: INSERT 2 tags
-      expect(calls[1].sql).toContain("INSERT OR REPLACE");
-      expect(calls[1].params).toHaveLength(6); // 2 tags × 3 params
+      expect(call1.sql).toContain("INSERT OR REPLACE");
+      expect(call1.params).toHaveLength(6); // 2 tags × 3 params
     });
 
     test("removes all tags when tagIds is empty", async () => {
@@ -226,7 +236,9 @@ describe("/api/tags/mappings", () => {
 
       // Only DELETE, no INSERT
       expect(calls).toHaveLength(1);
-      expect(calls[0].sql).toContain("DELETE");
+      const c0 = calls[0];
+      if (!c0) return;
+      expect(c0.sql).toContain("DELETE");
     });
 
     test("handles multiple apps", async () => {

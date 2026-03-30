@@ -101,9 +101,11 @@ describe("executePush", () => {
 
     // Verify the backy webhook was called with POST + FormData
     expect(backyCalls).toHaveLength(1);
-    expect(backyCalls[0].method).toBe("POST");
-    expect(backyCalls[0].url).toBe("https://backy.test/webhook");
-    expect(backyCalls[0].body).toBeInstanceOf(FormData);
+    const bc0 = backyCalls[0];
+    if (!bc0) return;
+    expect(bc0.method).toBe("POST");
+    expect(bc0.url).toBe("https://backy.test/webhook");
+    expect(bc0.body).toBeInstanceOf(FormData);
   });
 
   test("sends valid gzipped BackupEnvelope in FormData", async () => {
@@ -129,7 +131,9 @@ describe("executePush", () => {
     expect(result.ok).toBe(true);
 
     // Extract and decompress the file from FormData
-    const formData = backyCalls[0].body!;
+    const bc0 = backyCalls[0];
+    if (!bc0) return;
+    const formData = bc0.body!;
     const file = formData.get("file") as Blob;
     expect(file).toBeTruthy();
 
@@ -140,7 +144,9 @@ describe("executePush", () => {
     expect(envelope.schemaVersion).toBe(1);
     expect(envelope.userId).toBe("u1");
     expect(envelope.focusSessions).toHaveLength(1);
-    expect(envelope.focusSessions[0].app_name).toBe("Chrome");
+    const fs0 = envelope.focusSessions[0];
+    if (!fs0) return;
+    expect(fs0.app_name).toBe("Chrome");
 
     // Check FormData fields
     expect(formData.get("environment")).toBeTruthy();
@@ -198,12 +204,16 @@ describe("executePush", () => {
       apiKey: "sk-test",
     });
 
-    const file = backyCalls[0].body!.get("file") as Blob;
+    const bc0 = backyCalls[0];
+    if (!bc0 || !bc0.body) return;
+    const file = bc0.body.get("file") as Blob;
     const buf = Buffer.from(await file.arrayBuffer());
     const envelope = JSON.parse(gunzipSync(buf).toString()) as BackupEnvelope;
 
     expect(envelope.settings).toHaveLength(1);
-    expect(envelope.settings[0].key).toBe("timezone");
+    const s0 = envelope.settings[0];
+    if (!s0) return;
+    expect(s0.key).toBe("timezone");
   });
 });
 

@@ -227,7 +227,7 @@ function appColor(name: string): string {
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
-  return CHART_COLORS[Math.abs(hash) % CHART_COLORS.length];
+  return CHART_COLORS[Math.abs(hash) % CHART_COLORS.length] ?? CHART_COLORS[0] ?? "#6366f1";
 }
 
 function SessionRow({

@@ -103,6 +103,8 @@ describe("/api/tags", () => {
       expect(data.name).toBe("productivity");
 
       expect(calls.length).toBe(1);
+      expect(calls[0]).toBeDefined();
+      if (!calls[0]) return;
       expect(calls[0].sql).toContain("INSERT INTO tags");
     });
 

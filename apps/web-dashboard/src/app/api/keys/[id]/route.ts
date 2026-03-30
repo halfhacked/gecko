@@ -19,8 +19,10 @@ async function findOwnedKey(
     "SELECT id, user_id FROM api_keys WHERE id = ?",
     [keyId],
   );
-  if (rows.length === 0 || rows[0].user_id !== userId) return null;
-  return rows[0];
+  if (rows.length === 0) return null;
+  const row = rows[0];
+  if (!row || row.user_id !== userId) return null;
+  return row;
 }
 
 // ---------------------------------------------------------------------------

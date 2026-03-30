@@ -80,7 +80,11 @@ export async function requireApiKey(
     return { error: jsonError("Invalid API key", 401) };
   }
 
-  const { user_id, device_id, id } = rows[0];
+  const row = rows[0];
+  if (!row) {
+    return { error: jsonError("Invalid API key", 401) };
+  }
+  const { user_id, device_id, id } = row;
 
   // Update last_used timestamp (fire-and-forget)
   query("UPDATE api_keys SET last_used = ? WHERE id = ?", [
@@ -103,7 +107,7 @@ export function extractBearerToken(req: Request): string | null {
   if (!header) return null;
 
   const match = header.match(/^bearer\s+(.+)$/i);
-  if (!match || !match[1].trim()) return null;
+  if (!match || !match[1]?.trim()) return null;
 
   return match[1].trim();
 }

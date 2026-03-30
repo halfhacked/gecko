@@ -161,8 +161,10 @@ describe("POST /api/backy/pull", () => {
 
     // Verify the actual push went to the configured backy webhook
     expect(backyCalls).toHaveLength(1);
-    expect(backyCalls[0].url).toBe("https://backy.test/webhook");
-    expect(backyCalls[0].method).toBe("POST");
+    const bc0 = backyCalls[0];
+    if (!bc0) return;
+    expect(bc0.url).toBe("https://backy.test/webhook");
+    expect(bc0.method).toBe("POST");
   });
 
   test("sends valid gzipped envelope to backy service", async () => {
@@ -192,7 +194,9 @@ describe("POST /api/backy/pull", () => {
     });
     await POST(req);
 
-    const formData = backyCalls[0].body!;
+    const bc0 = backyCalls[0];
+    if (!bc0) return;
+    const formData = bc0.body!;
     const file = formData.get("file") as Blob;
     expect(file).toBeTruthy();
 
@@ -202,7 +206,9 @@ describe("POST /api/backy/pull", () => {
     expect(envelope.schemaVersion).toBe(1);
     expect(envelope.userId).toBe(USER_ID);
     expect(envelope.focusSessions).toHaveLength(1);
-    expect(envelope.focusSessions[0].app_name).toBe("Safari");
+    const fs0 = envelope.focusSessions[0];
+    if (!fs0) return;
+    expect(fs0.app_name).toBe("Safari");
   });
 
   test("returns 401 when pull key is missing", async () => {

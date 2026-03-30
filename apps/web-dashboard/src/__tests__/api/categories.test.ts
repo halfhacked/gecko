@@ -116,7 +116,11 @@ describe("/api/categories", () => {
       expect(data.categories.every((c: { isDefault: boolean }) => c.isDefault)).toBe(true);
 
       // Verify seeding was triggered: COUNT + INSERT categories + mapping batches + SELECT
+      expect(calls[0]).toBeDefined();
+      if (!calls[0]) return;
       expect(calls[0].sql).toContain("COUNT(*)");
+      expect(calls[1]).toBeDefined();
+      if (!calls[1]) return;
       expect(calls[1].sql).toContain("INSERT INTO categories");
     });
   });
@@ -146,6 +150,8 @@ describe("/api/categories", () => {
       expect(data.isDefault).toBe(false);
 
       expect(calls.length).toBe(1);
+      expect(calls[0]).toBeDefined();
+      if (!calls[0]) return;
       expect(calls[0].sql).toContain("INSERT INTO categories");
     });
 

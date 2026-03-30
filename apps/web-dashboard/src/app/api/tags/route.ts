@@ -90,7 +90,11 @@ export async function PUT(req: Request): Promise<Response> {
     [id],
   );
 
-  if (rows.length === 0 || rows[0].user_id !== user.userId) {
+  if (rows.length === 0) {
+    return jsonError("Tag not found", 404);
+  }
+  const existing = rows[0];
+  if (!existing || existing.user_id !== user.userId) {
     return jsonError("Tag not found", 404);
   }
 
@@ -122,7 +126,11 @@ export async function DELETE(req: Request): Promise<Response> {
     [id],
   );
 
-  if (rows.length === 0 || rows[0].user_id !== user.userId) {
+  if (rows.length === 0) {
+    return jsonError("Tag not found", 404);
+  }
+  const existing = rows[0];
+  if (!existing || existing.user_id !== user.userId) {
     return jsonError("Tag not found", 404);
   }
 

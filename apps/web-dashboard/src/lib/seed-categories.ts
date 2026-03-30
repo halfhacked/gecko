@@ -19,7 +19,7 @@ export async function seedDefaultCategories(userId: string): Promise<boolean> {
     [userId],
   );
 
-  if (existing[0]?.cnt > 0) {
+  if ((existing[0]?.cnt ?? 0) > 0) {
     return false;
   }
 

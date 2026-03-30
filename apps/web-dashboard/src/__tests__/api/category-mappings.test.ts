@@ -116,6 +116,8 @@ describe("/api/categories/mappings", () => {
       expect(data.upserted).toBe(2);
 
       expect(calls.length).toBe(1);
+      expect(calls[0]).toBeDefined();
+      if (!calls[0]) return;
       expect(calls[0].sql).toContain("INSERT OR REPLACE");
     });
 
@@ -180,8 +182,12 @@ describe("/api/categories/mappings", () => {
       // Should have been 2 separate D1 calls
       expect(calls.length).toBe(2);
       // First batch: 25 * 3 params = 75
+      expect(calls[0]).toBeDefined();
+      if (!calls[0]) return;
       expect(calls[0].params.length).toBe(75);
       // Second batch: 5 * 3 params = 15
+      expect(calls[1]).toBeDefined();
+      if (!calls[1]) return;
       expect(calls[1].params.length).toBe(15);
     });
   });

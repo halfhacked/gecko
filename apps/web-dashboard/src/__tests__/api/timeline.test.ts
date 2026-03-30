@@ -89,7 +89,9 @@ describe("GET /api/stats/timeline", () => {
     expect(data.period).toBe("week");
     // calls[0] = timezone lookup, calls[1] = data query
     // Data query should have user_id + start_time
-    expect(calls[1].params.length).toBe(2);
+    const c1 = calls[1];
+    if (!c1) return;
+    expect(c1.params.length).toBe(2);
   });
 
   test("handles 'all' period without start_time filter", async () => {
@@ -103,7 +105,9 @@ describe("GET /api/stats/timeline", () => {
     expect(data.period).toBe("all");
     // calls[0] = timezone lookup, calls[1] = data query
     // Only user_id, no start_time
-    expect(calls[1].params.length).toBe(1);
+    const c1 = calls[1];
+    if (!c1) return;
+    expect(c1.params.length).toBe(1);
   });
 
   test("handles 'month' period", async () => {
@@ -115,7 +119,9 @@ describe("GET /api/stats/timeline", () => {
     const data = await res.json();
 
     expect(data.period).toBe("month");
-    expect(calls[1].params.length).toBe(2);
+    const c1 = calls[1];
+    if (!c1) return;
+    expect(c1.params.length).toBe(2);
   });
 
   test("returns empty timeline when no data", async () => {
@@ -137,7 +143,9 @@ describe("GET /api/stats/timeline", () => {
     await GET(req);
 
     // calls[1] = data query (after timezone lookup)
-    const sql = calls[1].sql;
+    const c1 = calls[1];
+    if (!c1) return;
+    const sql = c1.sql;
     // Should contain timezone-offset date expression: date(start_time + <offset>, 'unixepoch')
     expect(sql).toContain("date(start_time +");
     expect(sql).toContain("'unixepoch')");

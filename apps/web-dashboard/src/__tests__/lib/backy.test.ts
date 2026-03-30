@@ -206,9 +206,15 @@ describe("compress / decompress roundtrip", () => {
     const restored = decompressEnvelope(compressed);
     expect(restored).toEqual(original);
     expect(restored.focusSessions).toHaveLength(1);
-    expect(restored.focusSessions[0].app_name).toBe("Chrome");
+    const fs0 = restored.focusSessions[0];
+    if (!fs0) return;
+    expect(fs0).toBeDefined();
+    expect(fs0.app_name).toBe("Chrome");
     expect(restored.settings).toHaveLength(1);
-    expect(restored.settings[0].key).toBe("timezone");
+    const s0 = restored.settings[0];
+    if (!s0) return;
+    expect(s0).toBeDefined();
+    expect(s0.key).toBe("timezone");
   });
 
   test("compressed size is smaller than JSON for non-trivial data", () => {

@@ -110,11 +110,15 @@ export async function PUT(req: Request): Promise<Response> {
     is_default: number;
   }>("SELECT id, user_id, is_default FROM categories WHERE id = ?", [id]);
 
-  if (rows.length === 0 || rows[0].user_id !== user.userId) {
+  if (rows.length === 0) {
+    return jsonError("Category not found", 404);
+  }
+  const existing = rows[0];
+  if (!existing || existing.user_id !== user.userId) {
     return jsonError("Category not found", 404);
   }
 
-  if (rows[0].is_default === 1) {
+  if (existing.is_default === 1) {
     return jsonError("Cannot edit default categories", 403);
   }
 
@@ -174,11 +178,15 @@ export async function DELETE(req: Request): Promise<Response> {
     is_default: number;
   }>("SELECT id, user_id, is_default FROM categories WHERE id = ?", [id]);
 
-  if (rows.length === 0 || rows[0].user_id !== user.userId) {
+  if (rows.length === 0) {
+    return jsonError("Category not found", 404);
+  }
+  const existing = rows[0];
+  if (!existing || existing.user_id !== user.userId) {
     return jsonError("Category not found", 404);
   }
 
-  if (rows[0].is_default === 1) {
+  if (existing.is_default === 1) {
     return jsonError("Cannot delete default categories", 403);
   }
 

@@ -57,8 +57,10 @@ describe("settingsRepo.findByUserId", () => {
     const result = await settingsRepo.findByUserId("u1");
 
     expect(result).toEqual(rows);
-    expect(calls[0].sql).toContain("SELECT");
-    expect(calls[0].params).toEqual(["u1"]);
+    const c0 = calls[0];
+    if (!c0) return;
+    expect(c0.sql).toContain("SELECT");
+    expect(c0.params).toEqual(["u1"]);
   });
 
   test("returns empty array when no settings", async () => {
@@ -79,7 +81,9 @@ describe("settingsRepo.findByKey", () => {
     const result = await settingsRepo.findByKey("u1", "timezone");
 
     expect(result).toEqual(row);
-    expect(calls[0].params).toEqual(["u1", "timezone"]);
+    const c0 = calls[0];
+    if (!c0) return;
+    expect(c0.params).toEqual(["u1", "timezone"]);
   });
 
   test("returns undefined when not found", async () => {
@@ -99,11 +103,13 @@ describe("settingsRepo.upsert", () => {
     await settingsRepo.upsert("u1", "timezone", "UTC");
 
     expect(calls).toHaveLength(1);
-    expect(calls[0].sql).toContain("INSERT INTO settings");
-    expect(calls[0].sql).toContain("ON CONFLICT");
-    expect(calls[0].params[0]).toBe("u1");
-    expect(calls[0].params[1]).toBe("timezone");
-    expect(calls[0].params[2]).toBe("UTC");
+    const c0 = calls[0];
+    if (!c0) return;
+    expect(c0.sql).toContain("INSERT INTO settings");
+    expect(c0.sql).toContain("ON CONFLICT");
+    expect(c0.params[0]).toBe("u1");
+    expect(c0.params[1]).toBe("timezone");
+    expect(c0.params[2]).toBe("UTC");
   });
 });
 
@@ -117,8 +123,10 @@ describe("settingsRepo.delete", () => {
     const result = await settingsRepo.delete("u1", "timezone");
 
     expect(result).toBe(true);
-    expect(calls[0].sql).toContain("DELETE FROM settings");
-    expect(calls[0].params).toEqual(["u1", "timezone"]);
+    const c0 = calls[0];
+    if (!c0) return;
+    expect(c0.sql).toContain("DELETE FROM settings");
+    expect(c0.params).toEqual(["u1", "timezone"]);
   });
 
   test("returns false when no row found", async () => {
@@ -138,8 +146,10 @@ describe("settingsRepo.deleteByUserId", () => {
     const result = await settingsRepo.deleteByUserId("u1");
 
     expect(result).toBe(3);
-    expect(calls[0].sql).toContain("DELETE FROM settings WHERE user_id = ?");
-    expect(calls[0].params).toEqual(["u1"]);
+    const c0 = calls[0];
+    if (!c0) return;
+    expect(c0.sql).toContain("DELETE FROM settings WHERE user_id = ?");
+    expect(c0.params).toEqual(["u1"]);
   });
 
   test("returns 0 when user has no settings", async () => {

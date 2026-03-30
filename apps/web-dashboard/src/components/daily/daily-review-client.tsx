@@ -368,7 +368,7 @@ function AiAnalysisPanel({
           <Button
             variant="outline"
             size="sm"
-            onClick={onGenerate}
+            onClick={() => onGenerate()}
             className="mt-3"
           >
             Retry
@@ -385,7 +385,7 @@ function AiAnalysisPanel({
         <p className="text-sm text-muted-foreground mb-3">
           Generate an AI-powered analysis of your day.
         </p>
-        <Button onClick={onGenerate} size="sm">
+        <Button onClick={() => onGenerate()} size="sm">
           <Sparkles className="size-4 mr-1.5" />
           Analyze
         </Button>

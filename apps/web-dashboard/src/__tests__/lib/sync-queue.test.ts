@@ -103,6 +103,8 @@ describe("SyncQueue", () => {
       await queue.drain();
 
       expect(writeFn).toHaveBeenCalledTimes(1);
+      expect(written[0]).toBeDefined();
+      if (!written[0]) return;
       expect(written[0].length).toBe(3);
       expect(queue.getStats().pending).toBe(0);
       expect(queue.getStats().drained).toBe(3);
@@ -334,8 +336,8 @@ describe("SyncQueue", () => {
         is_full_screen: false,
         is_minimized: false,
       };
-      const interfaceKeys = Object.keys(reference).sort();
-      const columnKeys = [...COLUMNS].sort();
+      const interfaceKeys = Object.keys(reference).sort() as (keyof QueuedSession)[];
+      const columnKeys = [...COLUMNS].sort() as (keyof QueuedSession)[];
 
       expect(columnKeys).toEqual(interfaceKeys);
     });

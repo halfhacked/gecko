@@ -119,10 +119,12 @@ describe("/api/settings/timezone", () => {
 
       // Verify the upsert SQL was called
       expect(calls.length).toBe(1);
-      expect(calls[0].sql).toContain("INSERT INTO settings");
-      expect(calls[0].params[0]).toBe("e2e-test-user");
-      expect(calls[0].params[1]).toBe("timezone");
-      expect(calls[0].params[2]).toBe("Europe/London");
+      const c0 = calls[0];
+      if (!c0) return;
+      expect(c0.sql).toContain("INSERT INTO settings");
+      expect(c0.params[0]).toBe("e2e-test-user");
+      expect(c0.params[1]).toBe("timezone");
+      expect(c0.params[2]).toBe("Europe/London");
     });
 
     test("rejects invalid timezone string", async () => {
