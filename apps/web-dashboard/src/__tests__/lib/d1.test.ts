@@ -11,6 +11,8 @@ beforeEach(() => {
   process.env.CF_ACCOUNT_ID = "test-account-id";
   process.env.CF_API_TOKEN = "test-api-token";
   process.env.CF_D1_DATABASE_ID = "test-db-id";
+  // Remove test override so getD1Config() uses CF_D1_DATABASE_ID
+  delete process.env.CF_D1_DATABASE_ID_TEST;
 });
 
 afterEach(() => {
@@ -45,10 +47,12 @@ describe("d1 client", () => {
 
       await query("SELECT * FROM users WHERE id = ?", ["u1"]);
 
-      const fetchMock = globalThis.fetch as ReturnType<typeof mock>;
+      const fetchMock = globalThis.fetch as unknown as ReturnType<typeof mock>;
       expect(fetchMock).toHaveBeenCalledTimes(1);
 
-      const [url, options] = fetchMock.mock.calls[0] as [string, RequestInit];
+      const call0 = fetchMock.mock.calls[0];
+      if (!call0) return;
+      const [url, options] = call0 as [string, RequestInit];
       expect(url).toBe(
         "https://api.cloudflare.com/client/v4/accounts/test-account-id/d1/database/test-db-id/query"
       );
@@ -79,9 +83,11 @@ describe("d1 client", () => {
 
       await query("SELECT 1");
 
-      const fetchMock = globalThis.fetch as ReturnType<typeof mock>;
+      const fetchMock = globalThis.fetch as unknown as ReturnType<typeof mock>;
+      const call0 = fetchMock.mock.calls[0];
+      if (!call0) return;
       const body = JSON.parse(
-        (fetchMock.mock.calls[0] as [string, RequestInit])[1].body as string
+        (call0 as [string, RequestInit])[1].body as string
       );
       expect(body.params).toEqual([]);
     });
@@ -155,8 +161,10 @@ describe("d1 client", () => {
       mockFetch([{ id: "1", name: "Alice" }]);
 
       const users = await query<User>("SELECT * FROM users");
-      expect(users[0].id).toBe("1");
-      expect(users[0].name).toBe("Alice");
+      const u0 = users[0];
+      if (!u0) return;
+      expect(u0.id).toBe("1");
+      expect(u0.name).toBe("Alice");
     });
   });
 

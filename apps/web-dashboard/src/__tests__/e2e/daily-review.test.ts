@@ -76,6 +76,71 @@ afterAll(async () => {
 });
 
 // ---------------------------------------------------------------------------
+// Seed sessions for 2026-02-27 so daily stats & analyze endpoints have data
+// ---------------------------------------------------------------------------
+
+// 2026-02-27T00:00:00+08:00 in epoch seconds
+const SEED_DATE_EPOCH_START = 1772121600;
+
+beforeAll(async () => {
+  if (!SHOULD_RUN) return;
+
+  await fetch(`${BASE_URL}/api/sync`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      sessions: [
+        {
+          id: crypto.randomUUID(),
+          app_name: "VS Code",
+          bundle_id: "com.microsoft.VSCode",
+          window_title: "daily-review.test.ts",
+          url: null,
+          start_time: SEED_DATE_EPOCH_START + 3600 * 2, // 02:00 UTC = 10:00 CST
+          duration: 3600,
+          tab_title: null,
+          tab_count: null,
+          document_path: null,
+          is_full_screen: false,
+          is_minimized: false,
+        },
+        {
+          id: crypto.randomUUID(),
+          app_name: "Safari",
+          bundle_id: "com.apple.Safari",
+          window_title: "GitHub PR Review",
+          url: "https://github.com/example/pr/1",
+          start_time: SEED_DATE_EPOCH_START + 3600 * 6, // 06:00 UTC = 14:00 CST
+          duration: 1800,
+          tab_title: "PR #1",
+          tab_count: 3,
+          document_path: null,
+          is_full_screen: false,
+          is_minimized: false,
+        },
+        {
+          id: crypto.randomUUID(),
+          app_name: "Terminal",
+          bundle_id: "com.apple.Terminal",
+          window_title: "zsh — bun test",
+          url: null,
+          start_time: SEED_DATE_EPOCH_START + 3600 * 8, // 08:00 UTC = 16:00 CST
+          duration: 900,
+          tab_title: null,
+          tab_count: null,
+          document_path: null,
+          is_full_screen: false,
+          is_minimized: false,
+        },
+      ],
+    }),
+  });
+
+  // Wait for async queue drain (interval is 2s, allow extra margin)
+  await new Promise((r) => setTimeout(r, 4000));
+});
+
+// ---------------------------------------------------------------------------
 // GET /api/daily/:date — validation
 // ---------------------------------------------------------------------------
 
@@ -234,6 +299,11 @@ describe("POST /api/daily/:date/analyze — AI integration", () => {
       // Call GET first to populate stats cache
       const res = await fetch(`${BASE_URL}/api/daily/2026-02-27`);
       expect(res.status).toBe(200);
+
+      const body = (await res.json()) as {
+        stats: { totalSessions: number };
+      };
+      expect(body.stats.totalSessions).toBeGreaterThan(0);
     },
   );
 
@@ -264,7 +334,9 @@ describe("POST /api/daily/:date/analyze — AI integration", () => {
       expect(body.result.improvements.length).toBeGreaterThan(0);
       expect(body.result.summary.length).toBeGreaterThan(0);
       expect(body.model).toBe(AI_MODEL);
-      expect(body.cached).toBe(false);
+      // Note: cached may be true if a prior test run already analysed this date
+      // (D1 database persists between runs). We only assert structure here.
+      expect(typeof body.cached).toBe("boolean");
 
       console.log(`[E2E] AI analysis score: ${body.score}`);
       console.log(

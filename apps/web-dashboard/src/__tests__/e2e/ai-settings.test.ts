@@ -115,6 +115,24 @@ interface AiSettings {
 // ---------------------------------------------------------------------------
 
 describe("AI settings API", () => {
+  // Reset AI settings to defaults so this test is order-independent
+  // (other E2E test files may configure AI settings via shared D1)
+  beforeAll(async () => {
+    if (!SHOULD_RUN) return;
+    await fetch(`${BASE_URL}/api/settings/ai`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        provider: "",
+        apiKey: "",
+        model: "",
+        autoSummarize: false,
+        baseURL: "",
+        sdkType: "",
+      }),
+    });
+  });
+
   test.skipIf(!SHOULD_RUN)(
     "GET /api/settings/ai returns defaults when unconfigured",
     async () => {
