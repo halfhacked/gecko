@@ -1,6 +1,6 @@
 // E2E: AI Settings API round-trip.
 //
-// Runs against the dev:e2e server (port 17028, E2E_SKIP_AUTH=true).
+// Runs against the dev:e2e server (port 17018, E2E_SKIP_AUTH=true).
 // Spawns the server, waits for readiness, runs BDD-style scenarios, then shuts down.
 //
 // IMPORTANT: Skipped unless explicitly invoked via `bun run test:e2e`.
@@ -19,7 +19,7 @@ const SHOULD_RUN = process.env.RUN_E2E === "true";
 // Config
 // ---------------------------------------------------------------------------
 
-const BASE_URL = "http://localhost:17028";
+const BASE_URL = "http://localhost:17018";
 const STARTUP_TIMEOUT_MS = 30_000;
 
 // ---------------------------------------------------------------------------
@@ -49,7 +49,7 @@ beforeAll(async () => {
   try {
     const res = await fetch(`${BASE_URL}/api/settings/ai`);
     if (res.status > 0) {
-      console.log("[E2E] Server already running on port 17028");
+      console.log("[E2E] Server already running on port 17018");
       return;
     }
   } catch {

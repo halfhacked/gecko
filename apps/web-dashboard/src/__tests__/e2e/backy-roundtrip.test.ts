@@ -1,6 +1,6 @@
 // E2E: Backy backup round-trip — configure, push, pull, and verify.
 //
-// Runs against the dev:e2e server (port 17028, E2E_SKIP_AUTH=true).
+// Runs against the dev:e2e server (port 17018, E2E_SKIP_AUTH=true).
 // Spawns a mock Backy server to receive uploads and verify payloads.
 //
 // IMPORTANT: Skipped unless explicitly invoked via `bun run test:e2e`.
@@ -21,7 +21,7 @@ const SHOULD_RUN = process.env.RUN_E2E === "true";
 // Config
 // ---------------------------------------------------------------------------
 
-const BASE_URL = "http://localhost:17028";
+const BASE_URL = "http://localhost:17018";
 const MOCK_BACKY_PORT = 10799;
 const MOCK_BACKY_URL = `http://localhost:${MOCK_BACKY_PORT}/webhook/gecko`;
 const MOCK_BACKY_API_KEY = "test-backy-api-key-12345";
@@ -60,7 +60,7 @@ interface ReceivedBackup {
   envelope: BackupEnvelope;
 }
 
-let mockBacky: Server | null = null;
+let mockBacky: Server<unknown> | null = null;
 const receivedBackups: ReceivedBackup[] = [];
 
 function startMockBacky() {
@@ -140,7 +140,7 @@ beforeAll(async () => {
   try {
     const res = await fetch(`${BASE_URL}/api/sessions`);
     if (res.status > 0) {
-      console.log("[E2E] App server already running on port 17028");
+      console.log("[E2E] App server already running on port 17018");
       return;
     }
   } catch {
@@ -244,6 +244,7 @@ describe.skipIf(!SHOULD_RUN)("E2E: Backy backup round-trip", () => {
       // Verify mock Backy received the upload
       expect(receivedBackups.length).toBe(beforeCount + 1);
       const received = receivedBackups[receivedBackups.length - 1];
+      if (!received) return;
       expect(received.authorization).toBe(`Bearer ${MOCK_BACKY_API_KEY}`);
       expect(received.envelope.schemaVersion).toBe(1);
       expect(received.envelope.exportedAt).toBeTruthy();

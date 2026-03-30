@@ -4,16 +4,20 @@
   "description": "Gecko screen time dashboard",
   "type": "module",
   "scripts": {
-    "dev": "vinext dev --port 7028",
+    "dev": "vinext dev --port 7018",
     "build": "vinext build",
-    "start": "vinext start --port 7028",
-    "dev:e2e": "E2E_SKIP_AUTH=true CF_D1_DATABASE_ID_TEST=bbe41479-5eeb-4598-abc5-12ccebcb9465 vinext dev --port 17028",
+    "start": "vinext start --port 7018",
+    "dev:e2e": "E2E_SKIP_AUTH=true CF_D1_DATABASE_ID_TEST=bbe41479-5eeb-4598-abc5-12ccebcb9465 vinext dev --port 17018",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint --max-warnings 0",
-    "test": "bun test src/__tests__/ --timeout 30000",
-    "test:coverage": "bun test src/__tests__/ --coverage --timeout 30000",
+    "lint:staged": "lint-staged",
+    "test": "bun test src/__tests__/ --timeout 30000 --path-ignore-patterns '**/bdd/**'",
+    "test:coverage": "bun run scripts/check-coverage.ts",
     "test:e2e": "RUN_E2E=true bun test --env-file=.env.e2e src/__tests__/e2e/ --timeout 60000",
-    "dev:bdd": "E2E_SKIP_AUTH=true CF_D1_DATABASE_ID_TEST=bbe41479-5eeb-4598-abc5-12ccebcb9465 vinext dev --port 27028",
+    "dev:bdd": "E2E_SKIP_AUTH=true CF_D1_DATABASE_ID_TEST=bbe41479-5eeb-4598-abc5-12ccebcb9465 vinext dev --port 27018",
     "test:bdd": "bunx playwright test",
+    "gate:security": "bun run scripts/gate-security.ts",
+    "verify:test-db": "bun run scripts/verify-test-db.ts",
     "prepare": "husky"
   },
   "devDependencies": {
@@ -24,6 +28,7 @@
     "@types/react-dom": "^19.2.3",
     "eslint": "9",
     "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "shadcn": "^3.8.5",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.0.0",
@@ -54,6 +59,10 @@
     "@hono/node-server": "^1.19.10",
     "express-rate-limit": "^8.2.2",
     "flatted": "^3.4.0",
-    "serialize-javascript": "^7.0.3"
+    "serialize-javascript": "^7.0.5",
+    "brace-expansion": "^2.0.2",
+    "path-to-regexp": "^8.4.0",
+    "picomatch": "^4.0.4",
+    "srvx": "^0.11.13"
   }
 }

@@ -81,7 +81,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - "Backup" renamed to "Backy" across sidebar, page title, and breadcrumb
 - ESLint upgraded to strict preset with zero-tolerance warnings
 - SwiftLint upgraded to `--strict` mode for zero-tolerance warnings
-- E2E port convention standardized: 17028 (L3 API), 27028 (L4 BDD)
+- E2E port convention standardized: 17018 (L3 API), 27018 (L4 BDD)
 
 #### Fixed
 - Port handling and clean shutdown for dev/E2E servers

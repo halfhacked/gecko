@@ -9,8 +9,8 @@
 |-------|----------|--------|-------|
 | L1: Unit Tests | 90%+ coverage, pre-commit gate | **PASS** | 608 web + 194 mac, pre-commit hook |
 | L2: Lint | Strict mode, zero tolerance | **PASS** | ESLint `strict` + SwiftLint `--strict` |
-| L3: API E2E | 100% REST API coverage, pre-push gate | **PASS** | 11 test files on port 17028, pre-push hook |
-| L4: BDD E2E | Playwright browser tests for core flows | **PASS** | 6 spec files on port 27028, on-demand |
+| L3: API E2E | 100% REST API coverage, pre-push gate | **PASS** | 11 test files on port 17018, pre-push hook |
+| L4: BDD E2E | Playwright browser tests for core flows | **PASS** | 6 spec files on port 27018, on-demand |
 
 ## Phase 1 — Fix Bugs + Lint Upgrade (Critical) ✓
 
@@ -48,9 +48,9 @@ violations but may miss warning-level issues.
 
 | Purpose | Current | Target |
 |---------|---------|--------|
-| Dev server | 7028 | 7028 (unchanged) |
-| API E2E server | 10728 | 17028 |
-| BDD E2E server | N/A | 27028 |
+| Dev server | 7018 | 7018 (unchanged) |
+| API E2E server | 10728 | 17018 |
+| BDD E2E server | N/A | 27018 |
 
 Update: `dev:e2e` script, all E2E test files, pre-push hook.
 
@@ -101,8 +101,8 @@ Integrate `scripts/e2e-server.sh` into `.husky/pre-push`:
 - `bunx playwright install chromium`
 - Create `playwright.config.ts` with:
   - `testDir: './src/__tests__/bdd'`
-  - `baseURL: 'http://localhost:27028'`
-  - `webServer` config for auto-start on port 27028
+  - `baseURL: 'http://localhost:27018'`
+  - `webServer` config for auto-start on port 27018
   - Screenshot on failure
 
 ### 3.2 Core user flow BDD tests
@@ -126,7 +126,7 @@ Integrate `scripts/e2e-server.sh` into `.husky/pre-push`:
 
 ```json
 "test:bdd": "bunx playwright test",
-"dev:bdd": "E2E_SKIP_AUTH=true vinext dev --port 27028"
+"dev:bdd": "E2E_SKIP_AUTH=true vinext dev --port 27018"
 ```
 
 ## Execution Order
@@ -135,7 +135,7 @@ Integrate `scripts/e2e-server.sh` into `.husky/pre-push`:
 Phase 1.1  Fix pre-push E2E skip bug          ✓ Done
 Phase 1.2  ESLint strict                       ✓ Done (strict, not strictTypeChecked)
 Phase 1.3  SwiftLint --strict                  ✓ Done
-Phase 2.1  Port standardization                ✓ Done (17028 / 27028)
+Phase 2.1  Port standardization                ✓ Done (17018 / 27018)
 Phase 2.2  E2E server auto-management          ✓ Done (scripts/e2e-server.sh)
 Phase 2.3  Fill uncovered API E2E tests        ✓ Done (11 test files)
 Phase 2.4  Update pre-push hook                ✓ Done

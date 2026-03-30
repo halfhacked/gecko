@@ -462,7 +462,7 @@ CREATE TABLE app_tag_mappings (
 | macOS tests | Done | 194 test functions, 0 lint violations |
 | Web dashboard tests | Done | 608 unit tests (0 lint errors) + 11 E2E test files + 6 BDD specs |
 | Git hooks (husky) | Done | pre-commit: UT (both platforms), pre-push: UT + Lint + API E2E |
-| E2E test infrastructure | Done | API E2E on port 17028, BDD Playwright on port 27028 |
+| E2E test infrastructure | Done | API E2E on port 17018, BDD Playwright on port 27018 |
 
 ---
 
@@ -474,12 +474,12 @@ CREATE TABLE app_tag_mappings (
 |---|---|---|---|
 | **L1: Unit Tests** | `bun test` + `xcodebuild test` | pre-commit | 194 mac + 608 web = 802 total tests |
 | **L2: Lint** | SwiftLint (`--strict`) + ESLint (strict) | pre-push | 0 violations, 0 errors |
-| **L3: API E2E** | `bun run test:e2e` | pre-push | 11 test files against live server on port 17028 |
-| **L4: BDD E2E** | `bun run test:bdd` (Playwright) | on-demand | 6 spec files, 21 browser tests on port 27028 |
+| **L3: API E2E** | `bun run test:e2e` | pre-push | 11 test files against live server on port 17018 |
+| **L4: BDD E2E** | `bun run test:bdd` (Playwright) | on-demand | 6 spec files, 21 browser tests on port 27018 |
 
 ### E2E Test Scenarios (L3)
 
-Run via `bun run test:e2e` (sets `RUN_E2E=true`, starts server on port 17028):
+Run via `bun run test:e2e` (sets `RUN_E2E=true`, starts server on port 17018):
 
 **Sync round-trip (`sync-roundtrip.test.ts`):**
 

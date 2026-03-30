@@ -86,7 +86,7 @@ open Gecko.xcodeproj    # Build & run from Xcode
 # ── Web Dashboard ──
 cd apps/web-dashboard
 bun install
-bun run dev             # http://localhost:7028
+bun run dev             # http://localhost:7018
 ```
 
 ## 📁 Project Structure

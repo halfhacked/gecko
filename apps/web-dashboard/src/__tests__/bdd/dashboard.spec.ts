@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-const BASE_URL = "http://localhost:27028";
+const BASE_URL = "http://localhost:27018";
 
 test.describe("Dashboard", () => {
   test("renders welcome heading and stat cards", async ({ page }) => {
