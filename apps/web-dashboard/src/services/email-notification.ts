@@ -88,11 +88,11 @@ export async function sendAnalysisEmail(
       "https://gecko.hexly.ai";
     const dashboardUrl = `${dashboardBaseUrl}/daily/${params.date}`;
 
-    const variables: Record<string, string | number> = {
+    const variables: Record<string, string> = {
       date: params.date,
-      score: params.result.score,
+      score: String(params.result.score),
       total_duration: fmtDuration(params.stats.totalDuration),
-      total_apps: params.stats.totalApps,
+      total_apps: String(params.stats.totalApps),
       highlights: formatHighlights(params.result.highlights),
       improvements: formatImprovements(params.result.improvements),
       time_segments: formatTimeSegments(params.result.timeSegments),
@@ -111,7 +111,7 @@ export async function sendAnalysisEmail(
       },
       body: JSON.stringify({
         to: address,
-        template_slug: templateSlug,
+        template: templateSlug,
         variables,
         idempotency_key: idempotencyKey,
       }),

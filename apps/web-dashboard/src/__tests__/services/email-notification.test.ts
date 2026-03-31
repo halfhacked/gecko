@@ -198,14 +198,14 @@ describe("sendAnalysisEmail", () => {
 
     const body = call.body as Record<string, unknown>;
     expect(body.to).toBe("test@example.com");
-    expect(body.template_slug).toBe("daily-analysis");
+    expect(body.template).toBe("daily-analysis");
     expect(body.idempotency_key).toBe("gecko-analysis-user-123-2026-03-30");
 
     const vars = body.variables as Record<string, unknown>;
     expect(vars.date).toBe("2026-03-30");
-    expect(vars.score).toBe(78);
+    expect(vars.score).toBe("78");
     expect(vars.total_duration).toBe("8h");
-    expect(vars.total_apps).toBe(8);
+    expect(vars.total_apps).toBe("8");
     expect(vars.dashboard_url).toBe("https://gecko.dev.hexly.ai/daily/2026-03-30");
   });
 
