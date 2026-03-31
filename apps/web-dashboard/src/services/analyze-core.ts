@@ -84,7 +84,7 @@ export interface AiSettings {
 }
 
 export type AnalysisOutcome =
-  | { ok: true; score: number; model: string; provider: string; durationMs: number; result: AiAnalysisResult; prompt: string; usage?: { promptTokens: number; completionTokens: number; totalTokens: number } }
+  | { ok: true; score: number; model: string; provider: string; durationMs: number; result: AiAnalysisResult; prompt: string; stats: DailyStats; usage?: { promptTokens: number; completionTokens: number; totalTokens: number } }
   | { ok: false; reason: "no_ai_config" | "no_sessions" | "ai_error" | "parse_error"; message: string };
 
 // ---------------------------------------------------------------------------
@@ -491,6 +491,7 @@ export async function runAnalysis(
     durationMs,
     result,
     prompt,
+    stats,
     usage: {
       promptTokens: usage?.promptTokens ?? 0,
       completionTokens: usage?.completionTokens ?? 0,

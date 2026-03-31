@@ -16,6 +16,7 @@ import { settingsRepo } from "@/lib/settings-repo";
 import { dailySummaryRepo } from "@/lib/daily-summary-repo";
 import { fetchSessionsForDate } from "@/lib/session-queries";
 import { runAnalysis, type AnalysisOutcome } from "@/services/analyze-core";
+import { sendAnalysisEmail } from "@/services/email-notification";
 import { getHourlyScheduler } from "@/lib/hourly-scheduler";
 
 // ---------------------------------------------------------------------------
@@ -164,6 +165,13 @@ export class AutoAnalyzeService {
       .then(async (outcome) => {
         if (outcome.ok) {
           console.log(`[AutoAnalyze] Analysis complete for user ${userId} date ${yesterday}: score=${outcome.score}`);
+          // Fire-and-forget email notification
+          sendAnalysisEmail({
+            userId,
+            date: yesterday,
+            result: outcome.result,
+            stats: outcome.stats,
+          }).catch(() => {}); // swallow — sendAnalysisEmail already handles errors internally
         } else {
           console.warn(`[AutoAnalyze] Analysis failed for user ${userId} date ${yesterday}: ${outcome.reason} — ${outcome.message}`);
           // Release the DB claim so the next tick can retry

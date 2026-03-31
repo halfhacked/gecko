@@ -25,6 +25,8 @@ import {
   type AppContext,
   type CustomPromptSections,
 } from "@/services/analyze-core";
+import { sendAnalysisEmail } from "@/services/email-notification";
+import { settingsRepo } from "@/lib/settings-repo";
 
 export const dynamic = "force-dynamic";
 
@@ -144,6 +146,17 @@ export async function POST(
       case "parse_error":
         return jsonError(outcome.message, 502);
     }
+  }
+
+  // Optional: send email notification for manual analysis (user must opt-in)
+  const onManual = await settingsRepo.findByKey(user.userId, "notification.email.onManualAnalyze");
+  if (onManual?.value === "true") {
+    sendAnalysisEmail({
+      userId: user.userId,
+      date,
+      result: outcome.result,
+      stats: outcome.stats,
+    }).catch(() => {}); // fire-and-forget
   }
 
   return jsonOk({
