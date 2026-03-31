@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.6.0] - 2026-03-31
+
+### Web Dashboard
+
+#### Added
+- **Auto daily analyze**: Hourly background scheduler automatically triggers AI analysis of the previous day's sessions when new-day data arrives. Users with `ai.autoSummarize` enabled get yesterday analyzed without manual intervention
+- **HourlyScheduler**: Generic hourly timer service (class + factory + lazy singleton) with re-entrancy guard, per-listener error isolation, and unsubscribe support
+- **AutoAnalyzeService**: Business logic layer that finds eligible users, checks trigger conditions (today has sessions + yesterday unanalyzed), and fires analysis as background tasks with 1h stale-task cleanup
+- **analyze-core service**: Extracted the full AI analysis pipeline (settings → data → prompt → AI call → cache) from the route handler into a reusable `runAnalysis()` function with discriminated union return type (`AnalysisOutcome`)
+- **DB-level claim lock**: Atomic `INSERT ... ON CONFLICT DO NOTHING` with `__analyzing__` sentinel prevents duplicate AI spend across concurrent workers
+- **Claim release on failure**: Failed analyses (provider timeout, parse error, etc.) automatically release the DB claim so the next hourly tick can retry
+
+#### Changed
+- Analyze route (`POST /api/daily/[date]/analyze`) refactored from 577-line monolith to thin HTTP wrapper delegating to `analyze-core`
+- Auto-analyze scheduler wired via `instrumentation.ts` `register()` hook — starts on server boot, not on first route visit
+- `settings-repo` gained `findUserIdsByKeyValue()` for discovering users by setting
+- `daily-summary-repo` gained `claimForAnalysis()` and `releaseAnalysisClaim()` for atomic claim management
+
+#### Infrastructure
+- Enforced `noUncheckedIndexedAccess` in TypeScript config for stricter array access safety
+- Standardized CI toolchain with unified pre-commit hook pipeline
+- Migrated dev/E2E/BDD ports from 7028/17028/27028 to 7018/17018/27018
+- Fixed `.env` base config loading in E2E scripts for D1 credentials
+- Restored skipped daily-review BDD test (L3 coverage)
+
 ## [1.5.1] - 2026-03-10
 
 ### Mac App
