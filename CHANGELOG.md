@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.6.1] - 2026-03-31
+
+### Web Dashboard
+
+#### Added
+- **Email notifications via Dove**: Daily analysis results are sent as formatted emails through the Dove relay service. Supports user-level opt-in (`notification.email.enabled`), per-user recipient address, and optional manual-analyze trigger. Idempotency keys prevent duplicate sends
+- **Email formatters**: Highlights/improvements rendered as Markdown bullet lists, time segments as Markdown table rows, all wired into a Dove template (`daily-analysis`)
+
+#### Fixed
+- **Auto-analyze scheduler in production**: `ensureAutoAnalyze()` moved from `instrumentation.ts` (never loaded by vinext production builds) to the analyze route module scope, ensuring the hourly scheduler actually starts in production
+- **Dove webhook payload**: Corrected field name (`template` not `template_slug`) and ensured all template variables are strings per Dove API spec
+
 ## [1.6.0] - 2026-03-31
 
 ### Web Dashboard
