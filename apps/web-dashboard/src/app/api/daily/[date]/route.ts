@@ -11,11 +11,6 @@ import { dailySummaryRepo } from "@/lib/daily-summary-repo";
 import { computeDailyStats } from "@/services/daily-stats";
 import { todayInTz } from "@/lib/timezone";
 import { fetchSessionsForDate } from "@/lib/session-queries";
-import { ensureAutoAnalyze } from "@/lib/auto-analyze";
-
-// Lazy init: wire up the hourly auto-analyze scheduler on first route import.
-// This module is loaded on the first /api/daily/* request — ideal trigger point.
-ensureAutoAnalyze();
 
 export const dynamic = "force-dynamic";
 

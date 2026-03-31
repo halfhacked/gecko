@@ -31,6 +31,12 @@ export interface AutoAnalyzeDeps {
   hasAnalysis: (userId: string, date: string) => Promise<boolean>;
   /** Check if sessions exist for user+date. */
   hasSessions: (userId: string, date: string, tz: string) => Promise<boolean>;
+  /**
+   * Atomically claim a (user, date) slot for analysis.
+   * Returns true if this process won the claim, false if another process
+   * already claimed it. Prevents duplicate AI spend across workers.
+   */
+  claimForAnalysis: (userId: string, date: string) => Promise<boolean>;
   /** Run the actual AI analysis. */
   runAnalysis: (userId: string, date: string, tz: string) => Promise<AnalysisOutcome>;
   /** Get current time (injected for testing). Default: Date.now */
@@ -129,6 +135,13 @@ export class AutoAnalyzeService {
       return;
     }
 
+    // Atomically claim this (user, date) slot in the DB.
+    // If another process already claimed it, skip — prevents duplicate AI spend.
+    const claimed = await this.deps.claimForAnalysis(userId, yesterday);
+    if (!claimed) {
+      return;
+    }
+
     // Fire analysis as background task
     console.log(`[AutoAnalyze] Triggering analysis for user ${userId} date ${yesterday}`);
     const promise = this.deps.runAnalysis(userId, yesterday, tz);
@@ -195,6 +208,8 @@ function createDefaultDeps(): AutoAnalyzeDeps {
       const rows = await fetchSessionsForDate(userId, date, tz);
       return rows.length > 0;
     },
+    claimForAnalysis: (userId, date) =>
+      dailySummaryRepo.claimForAnalysis(userId, date),
     runAnalysis: (userId, date, tz) => runAnalysis(userId, date, tz),
   };
 }

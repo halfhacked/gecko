@@ -68,4 +68,26 @@ export const dailySummaryRepo = {
       [id, userId, date, aiScore, aiResultJson, aiModel, aiPrompt ?? null],
     );
   },
+
+  /**
+   * Atomically claim a (user_id, date) slot for AI analysis.
+   *
+   * Inserts a placeholder row with ai_model = '__analyzing__' and
+   * ai_result_json = NULL. Returns true if the claim succeeded (no
+   * existing row), false if a row already exists (another process
+   * claimed it or analysis is already complete).
+   *
+   * This prevents duplicate AI calls across concurrent processes:
+   * only the process that wins the INSERT gets to call the AI provider.
+   */
+  async claimForAnalysis(userId: string, date: string): Promise<boolean> {
+    const id = crypto.randomUUID();
+    const result = await execute(
+      `INSERT INTO daily_summaries (id, user_id, date, ai_model, updated_at)
+       VALUES (?, ?, ?, '__analyzing__', datetime('now'))
+       ON CONFLICT (user_id, date) DO NOTHING`,
+      [id, userId, date],
+    );
+    return result.meta.changes > 0;
+  },
 };

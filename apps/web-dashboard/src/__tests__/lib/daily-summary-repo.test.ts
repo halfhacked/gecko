@@ -109,3 +109,32 @@ describe("dailySummaryRepo.upsertAiResult", () => {
     expect(c0.params[5]).toBe("claude-sonnet-4-20250514");
   });
 });
+
+// ---------------------------------------------------------------------------
+// claimForAnalysis
+// ---------------------------------------------------------------------------
+
+describe("dailySummaryRepo.claimForAnalysis", () => {
+  test("returns true when claim succeeds (no existing row)", async () => {
+    const { calls } = mockD1([{ results: [], meta: { changes: 1 } }]);
+    const claimed = await dailySummaryRepo.claimForAnalysis("u1", "2026-03-30");
+
+    expect(claimed).toBe(true);
+    expect(calls).toHaveLength(1);
+    const c0 = calls[0];
+    if (!c0) return;
+    expect(c0.sql).toContain("INSERT INTO daily_summaries");
+    expect(c0.sql).toContain("ON CONFLICT");
+    expect(c0.sql).toContain("DO NOTHING");
+    expect(c0.sql).toContain("__analyzing__");
+    expect(c0.params[1]).toBe("u1");
+    expect(c0.params[2]).toBe("2026-03-30");
+  });
+
+  test("returns false when another process already claimed it", async () => {
+    mockD1([{ results: [], meta: { changes: 0 } }]);
+    const claimed = await dailySummaryRepo.claimForAnalysis("u1", "2026-03-30");
+
+    expect(claimed).toBe(false);
+  });
+});

@@ -21,6 +21,7 @@ function makeDeps(overrides?: Partial<AutoAnalyzeDeps>): AutoAnalyzeDeps {
     getUserTimezone: mock(() => Promise.resolve("Asia/Shanghai")),
     hasAnalysis: mock(() => Promise.resolve(false)),
     hasSessions: mock(() => Promise.resolve(false)),
+    claimForAnalysis: mock(() => Promise.resolve(true)),
     runAnalysis: mock(() =>
       Promise.resolve({ ok: true, score: 75, model: "test", provider: "test", durationMs: 100, result: {} as never, prompt: "p" } as AnalysisOutcome),
     ),
@@ -226,6 +227,43 @@ describe("AutoAnalyzeService.onTick", () => {
     // Should not throw
     await svc.onTick();
     expect(deps.getUserTimezone).not.toHaveBeenCalled();
+  });
+
+  test("skips analysis when claimForAnalysis returns false (another process won)", async () => {
+    const deps = makeDeps({
+      findAutoSummarizeUsers: mock(() => Promise.resolve(["u1"])),
+      hasSessions: mock(() => Promise.resolve(true)),
+      hasAnalysis: mock(() => Promise.resolve(false)),
+      claimForAnalysis: mock(() => Promise.resolve(false)),
+    });
+    const svc = createAutoAnalyze(deps);
+
+    await svc.onTick();
+    expect(deps.claimForAnalysis).toHaveBeenCalledTimes(1);
+    expect(deps.runAnalysis).not.toHaveBeenCalled();
+  });
+
+  test("calls claimForAnalysis before runAnalysis", async () => {
+    const callOrder: string[] = [];
+    const deps = makeDeps({
+      findAutoSummarizeUsers: mock(() => Promise.resolve(["u1"])),
+      hasSessions: mock(() => Promise.resolve(true)),
+      hasAnalysis: mock(() => Promise.resolve(false)),
+      claimForAnalysis: mock(() => {
+        callOrder.push("claim");
+        return Promise.resolve(true);
+      }),
+      runAnalysis: mock(() => {
+        callOrder.push("analyze");
+        return Promise.resolve({ ok: true, score: 75, model: "m", provider: "p", durationMs: 50, result: {} as never, prompt: "p" } as AnalysisOutcome);
+      }),
+    });
+    const svc = createAutoAnalyze(deps);
+
+    await svc.onTick();
+    // Wait for background task
+    await new Promise((r) => setTimeout(r, 10));
+    expect(callOrder).toEqual(["claim", "analyze"]);
   });
 });
 
