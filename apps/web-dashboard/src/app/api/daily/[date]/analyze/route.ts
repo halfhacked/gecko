@@ -27,6 +27,13 @@ import {
 } from "@/services/analyze-core";
 import { sendAnalysisEmail } from "@/services/email-notification";
 import { settingsRepo } from "@/lib/settings-repo";
+import { ensureAutoAnalyze } from "@/lib/auto-analyze";
+
+// Wire up the hourly auto-analyze scheduler once at module load time.
+// This must live in a route module (not instrumentation.ts) because vinext
+// production builds only bundle route modules — instrumentation.ts is only
+// loaded by the Vite dev server, not by `vinext start`.
+ensureAutoAnalyze();
 
 export const dynamic = "force-dynamic";
 
