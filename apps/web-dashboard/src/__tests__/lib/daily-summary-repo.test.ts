@@ -138,3 +138,21 @@ describe("dailySummaryRepo.claimForAnalysis", () => {
     expect(claimed).toBe(false);
   });
 });
+
+// ---------------------------------------------------------------------------
+// releaseAnalysisClaim
+// ---------------------------------------------------------------------------
+
+describe("dailySummaryRepo.releaseAnalysisClaim", () => {
+  test("deletes placeholder row with __analyzing__ sentinel", async () => {
+    const { calls } = mockD1([{ results: [], meta: { changes: 1 } }]);
+    await dailySummaryRepo.releaseAnalysisClaim("u1", "2026-03-30");
+
+    expect(calls).toHaveLength(1);
+    const c0 = calls[0];
+    if (!c0) return;
+    expect(c0.sql).toContain("DELETE FROM daily_summaries");
+    expect(c0.sql).toContain("__analyzing__");
+    expect(c0.params).toEqual(["u1", "2026-03-30"]);
+  });
+});

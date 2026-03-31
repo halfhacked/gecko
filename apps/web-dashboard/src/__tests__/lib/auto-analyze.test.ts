@@ -22,6 +22,7 @@ function makeDeps(overrides?: Partial<AutoAnalyzeDeps>): AutoAnalyzeDeps {
     hasAnalysis: mock(() => Promise.resolve(false)),
     hasSessions: mock(() => Promise.resolve(false)),
     claimForAnalysis: mock(() => Promise.resolve(true)),
+    releaseAnalysisClaim: mock(() => Promise.resolve()),
     runAnalysis: mock(() =>
       Promise.resolve({ ok: true, score: 75, model: "test", provider: "test", durationMs: 100, result: {} as never, prompt: "p" } as AnalysisOutcome),
     ),
@@ -264,6 +265,61 @@ describe("AutoAnalyzeService.onTick", () => {
     // Wait for background task
     await new Promise((r) => setTimeout(r, 10));
     expect(callOrder).toEqual(["claim", "analyze"]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// releaseAnalysisClaim — failure recovery
+// ---------------------------------------------------------------------------
+
+describe("releaseAnalysisClaim behavior", () => {
+  test("does NOT release claim on successful analysis", async () => {
+    const deps = makeDeps({
+      findAutoSummarizeUsers: mock(() => Promise.resolve(["u1"])),
+      hasSessions: mock(() => Promise.resolve(true)),
+      hasAnalysis: mock(() => Promise.resolve(false)),
+      runAnalysis: mock(() =>
+        Promise.resolve({ ok: true, score: 80, model: "m", provider: "p", durationMs: 50, result: {} as never, prompt: "p" } as AnalysisOutcome),
+      ),
+    });
+    const svc = createAutoAnalyze(deps);
+
+    await svc.onTick();
+    await new Promise((r) => setTimeout(r, 10));
+
+    expect(deps.releaseAnalysisClaim).not.toHaveBeenCalled();
+  });
+
+  test("releases claim when analysis returns ok=false", async () => {
+    const deps = makeDeps({
+      findAutoSummarizeUsers: mock(() => Promise.resolve(["u1"])),
+      hasSessions: mock(() => Promise.resolve(true)),
+      hasAnalysis: mock(() => Promise.resolve(false)),
+      runAnalysis: mock(() =>
+        Promise.resolve({ ok: false, reason: "ai_error", message: "provider timeout" } as AnalysisOutcome),
+      ),
+    });
+    const svc = createAutoAnalyze(deps);
+
+    await svc.onTick();
+    await new Promise((r) => setTimeout(r, 10));
+
+    expect(deps.releaseAnalysisClaim).toHaveBeenCalledTimes(1);
+  });
+
+  test("releases claim when analysis throws unexpected error", async () => {
+    const deps = makeDeps({
+      findAutoSummarizeUsers: mock(() => Promise.resolve(["u1"])),
+      hasSessions: mock(() => Promise.resolve(true)),
+      hasAnalysis: mock(() => Promise.resolve(false)),
+      runAnalysis: mock(() => Promise.reject(new Error("network failure"))),
+    });
+    const svc = createAutoAnalyze(deps);
+
+    await svc.onTick();
+    await new Promise((r) => setTimeout(r, 10));
+
+    expect(deps.releaseAnalysisClaim).toHaveBeenCalledTimes(1);
   });
 });
 

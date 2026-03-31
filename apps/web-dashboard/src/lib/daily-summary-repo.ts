@@ -90,4 +90,19 @@ export const dailySummaryRepo = {
     );
     return result.meta.changes > 0;
   },
+
+  /**
+   * Release a previously claimed analysis slot on failure.
+   *
+   * Deletes the placeholder row ONLY if it still has ai_model = '__analyzing__'
+   * (i.e. analysis hasn't completed yet). This allows the next tick to retry.
+   * Will not delete rows that have real AI results.
+   */
+  async releaseAnalysisClaim(userId: string, date: string): Promise<void> {
+    await execute(
+      `DELETE FROM daily_summaries
+       WHERE user_id = ? AND date = ? AND ai_model = '__analyzing__'`,
+      [userId, date],
+    );
+  },
 };

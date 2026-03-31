@@ -37,6 +37,11 @@ export interface AutoAnalyzeDeps {
    * already claimed it. Prevents duplicate AI spend across workers.
    */
   claimForAnalysis: (userId: string, date: string) => Promise<boolean>;
+  /**
+   * Release a claimed slot on analysis failure.
+   * Deletes the placeholder so the next tick can retry.
+   */
+  releaseAnalysisClaim: (userId: string, date: string) => Promise<void>;
   /** Run the actual AI analysis. */
   runAnalysis: (userId: string, date: string, tz: string) => Promise<AnalysisOutcome>;
   /** Get current time (injected for testing). Default: Date.now */
@@ -156,18 +161,26 @@ export class AutoAnalyzeService {
 
     // Clean up when done (fire-and-forget)
     promise
-      .then((outcome) => {
+      .then(async (outcome) => {
         if (outcome.ok) {
           console.log(`[AutoAnalyze] Analysis complete for user ${userId} date ${yesterday}: score=${outcome.score}`);
         } else {
           console.warn(`[AutoAnalyze] Analysis failed for user ${userId} date ${yesterday}: ${outcome.reason} — ${outcome.message}`);
+          // Release the DB claim so the next tick can retry
+          await this.deps.releaseAnalysisClaim(userId, yesterday);
         }
       })
-      .catch((err) => {
+      .catch(async (err) => {
         console.error(
           `[AutoAnalyze] Unexpected error for user ${userId}:`,
           err instanceof Error ? err.message : err,
         );
+        // Release the DB claim so the next tick can retry
+        try {
+          await this.deps.releaseAnalysisClaim(userId, yesterday);
+        } catch {
+          // Best-effort release — don't mask the original error
+        }
       })
       .finally(() => {
         // Only remove if it's still the same task (not replaced by a new one)
@@ -210,6 +223,8 @@ function createDefaultDeps(): AutoAnalyzeDeps {
     },
     claimForAnalysis: (userId, date) =>
       dailySummaryRepo.claimForAnalysis(userId, date),
+    releaseAnalysisClaim: (userId, date) =>
+      dailySummaryRepo.releaseAnalysisClaim(userId, date),
     runAnalysis: (userId, date, tz) => runAnalysis(userId, date, tz),
   };
 }
