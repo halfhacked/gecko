@@ -158,3 +158,27 @@ describe("settingsRepo.deleteByUserId", () => {
     expect(result).toBe(0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// findUserIdsByKeyValue
+// ---------------------------------------------------------------------------
+
+describe("settingsRepo.findUserIdsByKeyValue", () => {
+  test("returns user IDs matching key=value", async () => {
+    const rows = [{ user_id: "u1" }, { user_id: "u2" }];
+    const { calls } = mockD1([{ results: rows }]);
+    const result = await settingsRepo.findUserIdsByKeyValue("ai.autoSummarize", "true");
+
+    expect(result).toEqual(["u1", "u2"]);
+    const c0 = calls[0];
+    if (!c0) return;
+    expect(c0.sql).toContain("SELECT DISTINCT user_id FROM settings");
+    expect(c0.params).toEqual(["ai.autoSummarize", "true"]);
+  });
+
+  test("returns empty array when no match", async () => {
+    mockD1([{ results: [] }]);
+    const result = await settingsRepo.findUserIdsByKeyValue("ai.autoSummarize", "true");
+    expect(result).toEqual([]);
+  });
+});

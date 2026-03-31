@@ -59,4 +59,13 @@ export const settingsRepo = {
     );
     return result.meta.changes;
   },
+
+  /** Find all distinct user IDs that have a specific setting key=value. */
+  async findUserIdsByKeyValue(key: string, value: string): Promise<string[]> {
+    const rows = await query<{ user_id: string }>(
+      "SELECT DISTINCT user_id FROM settings WHERE key = ? AND value = ?",
+      [key, value],
+    );
+    return rows.map((r) => r.user_id);
+  },
 };

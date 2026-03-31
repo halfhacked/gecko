@@ -8,17 +8,41 @@
  */
 
 import { requireSession, jsonOk, jsonError, getUserTimezone } from "@/lib/api-helpers";
+import { todayInTz } from "@/lib/timezone";
 import {
-  _validateDate as validateDate,
-  _loadAiSettings as loadAiSettings,
-  _loadAppContext as loadAppContext,
-  _buildPrompt as buildPrompt,
+  loadAiSettings,
+  loadAppContext,
+  buildPrompt,
   type CustomPromptSections,
-} from "@/app/api/daily/[date]/analyze/route";
+} from "@/services/analyze-core";
 import { computeDailyStats } from "@/services/daily-stats";
 import { fetchSessionsForDate } from "@/lib/session-queries";
 
 export const dynamic = "force-dynamic";
+
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function validateDate(dateStr: string, tz: string): string | null {
+  if (!DATE_RE.test(dateStr)) {
+    return "Invalid date format. Use YYYY-MM-DD.";
+  }
+  const parts = dateStr.split("-").map(Number);
+  const y = parts[0];
+  const m = parts[1];
+  const d = parts[2];
+  if (y === undefined || m === undefined || d === undefined) {
+    return "Invalid date.";
+  }
+  const test = new Date(Date.UTC(y, m - 1, d));
+  if (Number.isNaN(test.getTime()) || test.getUTCFullYear() !== y || test.getUTCMonth() !== m - 1 || test.getUTCDate() !== d) {
+    return "Invalid date.";
+  }
+  const today = todayInTz(tz);
+  if (dateStr > today) {
+    return "Cannot analyze future dates.";
+  }
+  return null;
+}
 
 export async function POST(
   _req: Request,
