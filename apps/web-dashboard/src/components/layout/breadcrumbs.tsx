@@ -18,7 +18,7 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
         return (
           <span key={item.label} className="flex items-center gap-1">
             {index > 0 && <ChevronRight className="h-3 w-3" />}
-            {item.href ? (
+            {item.href && !isLast ? (
               <Link
                 href={item.href}
                 className="hover:text-foreground transition-colors"
@@ -28,7 +28,7 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
             ) : (
               <span
                 className="text-foreground font-medium"
-                {...(isLast ? { "aria-current": "page" as const } : {})}
+                aria-current={isLast ? "page" : undefined}
               >
                 {item.label}
               </span>
