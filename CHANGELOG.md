@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.6.2] - 2026-04-04
+
+### Web Dashboard
+
+#### Fixed
+- **Input/Select components use `bg-input`**: Per B-5 spec, interactive controls now use the L3 `--input` token instead of `bg-background`, providing proper visual affordance in dark mode
+- **Dark mode `--input` brightness**: Corrected from 12% to 18% per B-5 spec, ensuring sufficient contrast against L2 cards (12.2%)
+- **Breadcrumbs accessibility**: `aria-current="page"` now always set on the last item per B-2 spec (dove a11y best practice)
+
 ## [1.6.1] - 2026-03-31
 
 ### Web Dashboard
