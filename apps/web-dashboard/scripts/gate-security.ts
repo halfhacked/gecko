@@ -49,7 +49,7 @@ async function main() {
 
   const results = await Promise.all([
     runCommand(
-      ["osv-scanner", "--lockfile=bun.lock"],
+      ["osv-scanner", "scan", "source", "--lockfile=bun.lock", "--config=osv-scanner.toml"],
       "osv-scanner (dependency vulnerabilities)",
     ),
     runCommand(
