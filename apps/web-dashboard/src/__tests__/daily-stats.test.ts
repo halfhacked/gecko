@@ -139,6 +139,9 @@ describe("computeScores", () => {
   });
 
   // -- Switch rate dimension --
+  // Note: Only "deep" switches (≥5min dwell in new app) are counted
+  // Dwell time accumulation respects gap threshold (5min)
+  // Dev workflow URLs (localhost, 127.0.0.1, ports, hexly.ai) are excluded
 
   test("switch rate: 0 switches per hour → 100", () => {
     const sessions = [
@@ -148,36 +151,170 @@ describe("computeScores", () => {
     expect(scores.switchRate).toBe(100);
   });
 
-  test("switch rate: ~10 switches/hour → 60", () => {
-    // 10 switches in 1h = 10/h
-    const sessions = [];
-    for (let i = 0; i < 11; i++) {
-      sessions.push(
-        session({
-          appName: i % 2 === 0 ? "A" : "B",
-          startTime: i * 327, // ~3600/11
-          duration: 327,
-        }),
-      );
-    }
+  test("switch rate: shallow switches (<5min dwell) not counted", () => {
+    // Multiple quick app switches, none with ≥5min dwell → no context switches
+    const sessions = [
+      session({ appName: "A", startTime: 0, duration: 1800 }), // 30min
+      session({ appName: "B", startTime: 1800, duration: 60 }), // 1min (shallow)
+      session({ appName: "A", startTime: 1860, duration: 1800 }), // back to A
+      session({ appName: "C", startTime: 3660, duration: 120 }), // 2min (shallow)
+      session({ appName: "A", startTime: 3780, duration: 1800 }), // back to A
+    ];
     const scores = computeScores(sessions);
-    // 10 switches in ~1h → 60
-    expect(scores.switchRate).toBe(60);
+    // B and C dwells are <5min, so they don't count as switches
+    expect(scores.switchRate).toBe(100);
   });
 
-  test("switch rate: >25 switches/hour → 20", () => {
+  test("switch rate: deep switches (≥5min dwell) counted", () => {
+    // 4 deep switches in ~1.17 hours
+    const sessions = [
+      session({ appName: "A", startTime: 0, duration: 1800 }), // 30min
+      session({ appName: "B", startTime: 1800, duration: 600 }), // 10min (deep switch)
+      session({ appName: "C", startTime: 2400, duration: 600 }), // 10min (deep switch)
+      session({ appName: "D", startTime: 3000, duration: 600 }), // 10min (deep switch)
+      session({ appName: "E", startTime: 3600, duration: 600 }), // 10min (deep switch)
+    ];
+    const scores = computeScores(sessions);
+    // 4 switches in ~1.17h = ~3.4/h → 100
+    expect(scores.switchRate).toBe(100);
+  });
+
+  test("switch rate: many deep switches → lower score", () => {
+    // Create 30 deep switches in ~2.5 hours
     const sessions = [];
     for (let i = 0; i < 31; i++) {
       sessions.push(
         session({
-          appName: i % 2 === 0 ? "A" : "B",
-          startTime: i * 120, // 30 switches in 1h
-          duration: 120,
+          appName: `App${i}`,
+          startTime: i * 300, // 5min each (300s)
+          duration: 300,
         }),
       );
     }
     const scores = computeScores(sessions);
-    expect(scores.switchRate).toBe(20);
+    // 30 switches in ~2.5h = 12/h → 60
+    expect(scores.switchRate).toBe(60);
+  });
+
+  test("switch rate: dwell time does not accumulate across large gaps", () => {
+    // A -> B (1min) -> [6min gap/idle] -> B (4min)
+    // Total B time is 5min, but gap breaks accumulation, so dwell = 1min only
+    const sessions = [
+      session({ appName: "A", startTime: 0, duration: 1800 }), // 30min
+      session({ appName: "B", startTime: 1800, duration: 60 }), // 1min
+      // 360s gap (6min > 5min threshold)
+      session({ appName: "B", startTime: 2220, duration: 240 }), // 4min
+      session({ appName: "A", startTime: 2460, duration: 1800 }), // back to A
+    ];
+    const scores = computeScores(sessions);
+    // B's dwell is only 1min (gap breaks accumulation), so A→B not counted
+    // Second B session: dwell is 4min, still not counted
+    // B→A: dwell is 30min, counted as 1 switch
+    // 1 switch in ~1.18h = 0.85/h → 100
+    expect(scores.switchRate).toBe(100);
+  });
+
+  test("switch rate: dwell time accumulates within gap threshold", () => {
+    // A -> B (3min) -> [2min gap] -> B (3min) = 6min total dwell
+    const sessions = [
+      session({ appName: "A", startTime: 0, duration: 1800 }), // 30min
+      session({ appName: "B", startTime: 1800, duration: 180 }), // 3min
+      // 120s gap (2min < 5min threshold)
+      session({ appName: "B", startTime: 2100, duration: 180 }), // 3min
+      session({ appName: "A", startTime: 2280, duration: 1800 }), // back to A
+    ];
+    const scores = computeScores(sessions);
+    // B's dwell is 6min (gap within threshold), so A→B counted
+    // B→A: dwell is 30min, counted
+    // 2 switches in ~1.13h = 1.77/h → 100
+    expect(scores.switchRate).toBe(100);
+  });
+
+  test("switch rate: IDE ↔ localhost does NOT count as switch", () => {
+    // VSCode ↔ Chrome(localhost) is normal dev workflow, should not penalize
+    const sessions = [
+      session({ appName: "VSCode", startTime: 0, duration: 600 }), // 10min coding
+      session({
+        appName: "Chrome",
+        url: "http://localhost:3000/app",
+        startTime: 600,
+        duration: 600, // 10min preview
+      }),
+      session({ appName: "VSCode", startTime: 1200, duration: 600 }), // 10min coding
+      session({
+        appName: "Chrome",
+        url: "http://127.0.0.1:5173/test",
+        startTime: 1800,
+        duration: 600, // 10min preview
+      }),
+      session({ appName: "VSCode", startTime: 2400, duration: 600 }), // 10min coding
+    ];
+    const scores = computeScores(sessions);
+    // All Chrome sessions have dev workflow URLs → excluded from switch counting
+    expect(scores.switchRate).toBe(100);
+  });
+
+  test("switch rate: IDE ↔ social media DOES count as switch", () => {
+    // VSCode ↔ Chrome(x.com) is distraction, should count as switch
+    const sessions = [
+      session({ appName: "VSCode", startTime: 0, duration: 600 }), // 10min coding
+      session({
+        appName: "Chrome",
+        url: "https://x.com/feed",
+        startTime: 600,
+        duration: 600, // 10min on Twitter
+      }),
+      session({ appName: "VSCode", startTime: 1200, duration: 600 }), // 10min coding
+      session({
+        appName: "Chrome",
+        url: "https://youtube.com/watch",
+        startTime: 1800,
+        duration: 600, // 10min on YouTube
+      }),
+      session({ appName: "VSCode", startTime: 2400, duration: 600 }), // 10min coding
+    ];
+    const scores = computeScores(sessions);
+    // 4 switches in 50min (0.83h) = 4.8/h → 80 (4 < x ≤ 8)
+    // Social media URLs are NOT dev workflow, so they count as real switches
+    expect(scores.switchRate).toBe(80);
+  });
+
+  test("switch rate: high-port URLs treated as dev workflow", () => {
+    const sessions = [
+      session({ appName: "VSCode", startTime: 0, duration: 600 }),
+      session({
+        appName: "Chrome",
+        url: "http://staging.example.com:8080/api",
+        startTime: 600,
+        duration: 600,
+      }),
+      session({ appName: "VSCode", startTime: 1200, duration: 600 }),
+    ];
+    const scores = computeScores(sessions);
+    // Port 8080 → dev workflow → excluded
+    expect(scores.switchRate).toBe(100);
+  });
+
+  test("switch rate: hexly.ai domains treated as dev workflow", () => {
+    const sessions = [
+      session({ appName: "VSCode", startTime: 0, duration: 600 }),
+      session({
+        appName: "Chrome",
+        url: "https://app.hexly.ai/dashboard",
+        startTime: 600,
+        duration: 600,
+      }),
+      session({ appName: "VSCode", startTime: 1200, duration: 600 }),
+      session({
+        appName: "Chrome",
+        url: "https://hexly.ai/docs",
+        startTime: 1800,
+        duration: 600,
+      }),
+    ];
+    const scores = computeScores(sessions);
+    // hexly.ai and *.hexly.ai → dev workflow → excluded
+    expect(scores.switchRate).toBe(100);
   });
 
   // -- Concentration dimension --

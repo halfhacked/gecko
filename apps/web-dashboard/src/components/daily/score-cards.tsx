@@ -48,8 +48,8 @@ export const SCORE_DIMENSIONS: ScoreDimension[] = [
   },
   {
     key: "switchRate",
-    label: "Switch Rate",
-    description: "App switching frequency",
+    label: "Context Switches",
+    description: "Deep app switches (≥5min dwell)",
     weight: 0.2,
   },
   {

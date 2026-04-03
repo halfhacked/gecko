@@ -71,6 +71,29 @@ export interface MergedSegment {
 
 const MERGE_GAP_THRESHOLD = 300; // 5 minutes in seconds
 const DEEP_WORK_THRESHOLD = 1800; // 30 minutes in seconds
+const CONTEXT_SWITCH_MIN_DWELL = 300; // 5 min — only count switches with this much dwell time
+const DWELL_GAP_THRESHOLD = 300; // 5 min — gap that breaks dwell time accumulation
+
+/**
+ * Check if a URL is a dev workflow URL that should be excluded from context switches.
+ * Includes: localhost, 127.0.0.1, any URL with explicit port, hexly.ai domains.
+ */
+function isDevWorkflowUrl(url: string | null): boolean {
+  if (!url) return false;
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase();
+    // localhost or 127.0.0.1
+    if (host === "localhost" || host === "127.0.0.1") return true;
+    // hexly.ai or *.hexly.ai
+    if (host === "hexly.ai" || host.endsWith(".hexly.ai")) return true;
+    // Any URL with explicit port (e.g., example.com:3000)
+    if (parsed.port !== "") return true;
+    return false;
+  } catch {
+    return false;
+  }
+}
 
 const DEEP_WORK_MAP: Record<number, number> = {
   0: 0,
@@ -165,17 +188,60 @@ export function computeScores(rows: SessionRow[]): DailyScores {
     ? 100
     : (DEEP_WORK_MAP[deepSegments] ?? 0);
 
-  // 3. Switch Rate: count app switches per hour
-  let switches = 0;
-  for (let i = 1; i < sorted.length; i++) {
-    const curr = sorted[i];
-    const prev = sorted[i - 1];
-    if (curr && prev && curr.app_name !== prev.app_name) {
-      switches++;
-    }
+  // 3. Context Switch Rate
+  // Only count "deep" switches — where user stayed ≥5min in the NEW context
+  // Dev workflow URLs (localhost, 127.0.0.1, ports, hexly.ai) are excluded
+  let contextSwitches = 0;
+  const firstSession = sorted[0];
+  if (!firstSession) {
+    return { focus: 0, deepWork: 0, switchRate: 0, concentration: 0, overall: 0 };
   }
+  let prevAppName = firstSession.app_name;
+  let prevWasDevUrl = isDevWorkflowUrl(firstSession.url);
+
+  for (let i = 1; i < sorted.length; i++) {
+    const s = sorted[i];
+    if (!s) continue;
+
+    const currIsDevUrl = isDevWorkflowUrl(s.url);
+
+    // Skip counting if transitioning to/from a dev workflow URL
+    if (currIsDevUrl || prevWasDevUrl) {
+      prevAppName = s.app_name;
+      prevWasDevUrl = currIsDevUrl;
+      continue;
+    }
+
+    if (s.app_name !== prevAppName) {
+      // Look ahead to sum duration of consecutive same-app sessions
+      // but respect gap threshold — large gaps break dwell accumulation
+      let dwellTime = s.duration;
+      let prevEnd = s.start_time + s.duration;
+
+      for (let j = i + 1; j < sorted.length; j++) {
+        const next = sorted[j];
+        if (!next) break;
+
+        const gap = next.start_time - prevEnd;
+        if (gap >= DWELL_GAP_THRESHOLD) break; // Gap too large, stop accumulating
+
+        if (next.app_name === s.app_name) {
+          dwellTime += next.duration;
+          prevEnd = next.start_time + next.duration;
+        } else break;
+      }
+
+      // Only count as a switch if user stayed ≥5min in the new app
+      if (dwellTime >= CONTEXT_SWITCH_MIN_DWELL) {
+        contextSwitches++;
+      }
+    }
+    prevAppName = s.app_name;
+    prevWasDevUrl = currIsDevUrl;
+  }
+
   const activeHours = activeSpan / 3600;
-  const switchesPerHour = activeHours > 0 ? switches / activeHours : 0;
+  const switchesPerHour = activeHours > 0 ? contextSwitches / activeHours : 0;
   let switchRate: number;
   if (switchesPerHour <= 4) switchRate = 100;
   else if (switchesPerHour <= 8) switchRate = 80;
