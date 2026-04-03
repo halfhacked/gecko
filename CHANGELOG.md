@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.7.0] - 2026-04-04
+
+### Web Dashboard
+
+#### Added
+- **Smart context switch detection**: Only counts "deep" app switches where user stayed ≥5min in the new app. Dwell time accumulation respects a 5min gap threshold to avoid counting fragmented sessions across idle periods as continuous dwell
+- **Dev workflow URL exclusion**: IDE ↔ localhost preview (localhost, 127.0.0.1, any port, hexly.ai domains) is recognized as normal workflow and excluded from switch counting. Social media and other non-dev URLs still count as real switches
+
+#### Changed
+- Switch rate scoring now better reflects actual attention fragmentation — quick previews during development don't penalize productivity scores
+
 ## [1.6.2] - 2026-04-04
 
 ### Web Dashboard
