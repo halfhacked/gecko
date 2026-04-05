@@ -172,11 +172,9 @@ export default function SessionsPage() {
           </p>
         )}
 
-        {/* Loading state */}
+        {/* Loading state — B-4 content-shaped skeleton */}
         {loading ? (
-          <div className="flex items-center justify-center rounded-2xl bg-secondary py-16">
-            <Loader2 className="size-6 animate-spin text-muted-foreground" />
-          </div>
+          <SessionsSkeleton />
         ) : filtered.length === 0 ? (
           <EmptyState search={search} total={sessions.length} />
         ) : (
@@ -439,4 +437,39 @@ function formatDateTime(date: Date): string {
     minute: "2-digit",
     hour12: true,
   });
+}
+
+// =============================================================================
+// Sessions Skeleton (B-4 per-page skeleton)
+// =============================================================================
+
+function SessionsSkeleton() {
+  return (
+    <div className="space-y-2">
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div
+          key={i}
+          className="rounded-2xl bg-secondary p-3 flex items-center gap-3"
+        >
+          {/* Color dot */}
+          <div className="size-3 rounded-full bg-muted animate-pulse" />
+
+          {/* Content */}
+          <div className="flex-1 space-y-2">
+            <div className="h-4 w-32 rounded bg-muted animate-pulse" />
+            <div className="h-3 w-48 rounded bg-muted animate-pulse" />
+          </div>
+
+          {/* Duration */}
+          <div className="text-right space-y-2">
+            <div className="h-4 w-12 rounded bg-muted animate-pulse ml-auto" />
+            <div className="h-3 w-16 rounded bg-muted animate-pulse ml-auto" />
+          </div>
+
+          {/* Chevron */}
+          <div className="size-4 rounded bg-muted animate-pulse" />
+        </div>
+      ))}
+    </div>
+  );
 }

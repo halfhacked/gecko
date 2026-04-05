@@ -452,9 +452,7 @@ export default function AppsPage() {
         )}
 
         {loading ? (
-          <div className="rounded-2xl bg-secondary p-8 text-center text-sm text-muted-foreground">
-            Loading apps...
-          </div>
+          <AppsSkeleton />
         ) : apps.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-2xl bg-secondary py-10 px-6 text-center">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-background ring-1 ring-border mb-3">
@@ -557,6 +555,35 @@ export default function AppsPage() {
         )}
       </div>
     </AppShell>
+  );
+}
+
+// =============================================================================
+// Apps Skeleton (B-4 per-page skeleton)
+// =============================================================================
+
+function AppsSkeleton() {
+  return (
+    <div className="space-y-3">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="rounded-2xl bg-secondary p-4">
+          {/* Header */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 space-y-2">
+              <div className="h-4 w-32 rounded bg-muted animate-pulse" />
+              <div className="h-3 w-48 rounded bg-muted animate-pulse" />
+            </div>
+            <div className="h-3 w-24 rounded bg-muted animate-pulse shrink-0" />
+          </div>
+          {/* Metadata */}
+          <div className="mt-3 flex items-center gap-3">
+            <div className="h-5 w-20 rounded-full bg-muted animate-pulse" />
+            <div className="h-5 w-14 rounded-full bg-muted animate-pulse" />
+            <div className="h-5 w-16 rounded-full bg-muted animate-pulse" />
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 
