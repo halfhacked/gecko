@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.7.1] - 2026-04-05
+
+### Web Dashboard
+
+#### Added
+- **Per-page skeletons for sessions/apps**: Loading states now display content-shaped skeleton placeholders instead of generic spinners (B-4 compliance)
+
+#### Fixed
+- **`logo-192.png` generation**: `resize-logos.py` now produces 192×192 asset for 2× Retina login avatars (B-3 compliance)
+- **osv-scanner false positive**: Ignored non-applicable Next.js PPR vulnerability (gecko uses vinext, not Next.js runtime)
+
 ## [1.7.0] - 2026-04-04
 
 ### Web Dashboard
