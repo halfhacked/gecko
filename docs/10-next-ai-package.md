@@ -992,15 +992,31 @@ export async function PUT(req: Request) {
 
 ```typescript
 // app/api/settings/ai/test/route.ts
-import { resolveAiConfig, createAiModel } from "@nocoo/next-ai/server";
+import { validateTestConfig, resolveAiConfig, createAiModel } from "@nocoo/next-ai/server";
 import { generateText } from "ai";
 import type { AiTestConfig } from "@nocoo/next-ai";
 
 export async function POST(req: Request) {
-  const config = (await req.json()) as AiTestConfig;
+  const testConfig = (await req.json()) as AiTestConfig;
+
+  // 使用 validateTestConfig 验证（不检查 apiKey）
+  const errors = validateTestConfig(testConfig);
+  if (errors.length > 0) {
+    return Response.json({
+      success: false,
+      error: errors.map(e => e.message).join("; "),
+    });
+  }
+
+  // 合并存储的 apiKey（如果请求中未提供）
+  const storedSettings = await loadSettingsFromDatabase();
+  const mergedConfig = {
+    ...testConfig,
+    apiKey: testConfig.apiKey || storedSettings.apiKey,
+  };
 
   try {
-    const resolved = resolveAiConfig(config);
+    const resolved = resolveAiConfig(mergedConfig);
     const model = createAiModel(resolved);
 
     const { text } = await generateText({
