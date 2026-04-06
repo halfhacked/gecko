@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.8.1] - 2026-04-06
+
+### Web Dashboard
+
+#### Added
+- **Notifications section in General Settings**: Centralized location for Auto-summarize and Email notification toggles with Dove integration
+
+#### Changed
+- **Auto-summarize moved from AI Settings**: Now in General Settings → Notifications for better organization
+- **AI Settings icon styling**: Added rounded background and increased icon size for better visibility
+
 ## [1.8.0] - 2026-04-06
 
 ### Web Dashboard
