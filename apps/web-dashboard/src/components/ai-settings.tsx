@@ -209,8 +209,8 @@ export function AiSettingsSection() {
   return (
     <div className="rounded-2xl bg-secondary p-5">
       <div className="mb-4 flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary">
-          <Bot className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-background">
+          <Bot className="h-5 w-5 text-muted-foreground" strokeWidth={1.5} />
         </div>
         <div>
           <h2 className="text-sm font-medium text-foreground">
@@ -624,8 +624,8 @@ export function PromptTemplateSection() {
     <div className="rounded-2xl bg-secondary p-5">
       {/* Header */}
       <div className="mb-4 flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary">
-          <FileText className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-background">
+          <FileText className="h-5 w-5 text-muted-foreground" strokeWidth={1.5} />
         </div>
         <div>
           <h2 className="text-sm font-medium text-foreground">
