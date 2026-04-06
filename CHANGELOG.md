@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.8.0] - 2026-04-06
+
+### Web Dashboard
+
+#### Changed
+- **AI module extracted to npm package**: Migrated AI service implementation to `@nocoo/next-ai` package for reusability across projects
+- **BDD tests relocated**: Moved Playwright BDD specs from `src/__tests__/bdd/` to `e2e/bdd/` to avoid conflicts with bun test runner
+
+#### Fixed
+- **Playwright testDir config**: Updated to match new BDD test location
+
 ## [1.7.1] - 2026-04-05
 
 ### Web Dashboard
