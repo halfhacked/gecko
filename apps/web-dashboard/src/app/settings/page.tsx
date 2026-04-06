@@ -13,7 +13,11 @@ import {
   Mail,
   Globe,
   Check,
+  Bell,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 // ---------------------------------------------------------------------------
 // Settings Page
@@ -40,6 +44,11 @@ export default function SettingsPage() {
 
         {/* Timezone section */}
         <TimezoneSection />
+
+        <Separator />
+
+        {/* Notifications section */}
+        <NotificationsSection />
       </div>
     </AppShell>
   );
@@ -275,5 +284,201 @@ function TimezoneSection() {
         </div>
       </div>
     </section>
+  );
+}
+
+// =============================================================================
+// Notifications Section
+// =============================================================================
+
+interface NotificationSettings {
+  autoSummarize: boolean;
+  emailEnabled: boolean;
+  emailAddress: string;
+}
+
+function NotificationsSection() {
+  const [settings, setSettings] = useState<NotificationSettings>({
+    autoSummarize: false,
+    emailEnabled: false,
+    emailAddress: "",
+  });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  // Load settings on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/settings/notifications");
+        if (res.ok) {
+          const data = await res.json();
+          setSettings({
+            autoSummarize: data.autoSummarize ?? false,
+            emailEnabled: data.emailEnabled ?? false,
+            emailAddress: data.emailAddress ?? "",
+          });
+        }
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  async function handleSave(updates: Partial<NotificationSettings>) {
+    const newSettings = { ...settings, ...updates };
+    setSettings(newSettings);
+    setSaving(true);
+    setSaved(false);
+
+    try {
+      const res = await fetch("/api/settings/notifications", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newSettings),
+      });
+      if (res.ok) {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <section className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Bell className="size-5 text-muted-foreground" strokeWidth={1.5} />
+          <h2 className="text-lg font-semibold">Notifications</h2>
+        </div>
+        <div className="rounded-2xl bg-secondary p-5">
+          <div className="flex items-center justify-center py-4">
+            <Loader2 className="size-5 animate-spin text-muted-foreground" />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Bell className="size-5 text-muted-foreground" strokeWidth={1.5} />
+        <h2 className="text-lg font-semibold">Notifications</h2>
+      </div>
+
+      <p className="text-sm text-muted-foreground">
+        Configure automatic analysis and email notifications for your daily reports.
+      </p>
+
+      <div className="rounded-2xl bg-secondary p-5 space-y-5">
+        {/* Auto-summarize toggle */}
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-background">
+              <Sparkles className="h-5 w-5 text-muted-foreground" strokeWidth={1.5} />
+            </div>
+            <div className="min-w-0">
+              <Label className="text-sm font-medium">Auto-summarize</Label>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Automatically generate AI summaries for your daily screen time.
+              </p>
+            </div>
+          </div>
+          <ToggleSwitch
+            checked={settings.autoSummarize}
+            onChange={(checked) => handleSave({ autoSummarize: checked })}
+            disabled={saving}
+          />
+        </div>
+
+        <Separator />
+
+        {/* Email notifications */}
+        <div className="space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-background">
+                <Mail className="h-5 w-5 text-muted-foreground" strokeWidth={1.5} />
+              </div>
+              <div className="min-w-0">
+                <Label className="text-sm font-medium">Email notifications</Label>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Receive daily analysis reports via email.
+                </p>
+              </div>
+            </div>
+            <ToggleSwitch
+              checked={settings.emailEnabled}
+              onChange={(checked) => handleSave({ emailEnabled: checked })}
+              disabled={saving}
+            />
+          </div>
+
+          {/* Email address input - only show when enabled */}
+          {settings.emailEnabled && (
+            <div className="ml-12 space-y-2">
+              <Label htmlFor="email-address" className="text-sm">
+                Email address
+              </Label>
+              <Input
+                id="email-address"
+                type="email"
+                placeholder="your@email.com"
+                value={settings.emailAddress}
+                onChange={(e) => setSettings((s) => ({ ...s, emailAddress: e.target.value }))}
+                onBlur={() => handleSave({ emailAddress: settings.emailAddress })}
+                disabled={saving}
+                className="max-w-sm"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Status */}
+        {(saving || saved) && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            {saving && <span>Saving...</span>}
+            {saved && (
+              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                <Check className="size-3" /> Saved
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+// =============================================================================
+// Toggle Switch Component
+// =============================================================================
+
+function ToggleSwitch({
+  checked,
+  onChange,
+  disabled,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => !disabled && onChange(!checked)}
+      disabled={disabled}
+      className={`relative mt-0.5 inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${checked ? "bg-foreground" : "bg-muted"}`}
+    >
+      <span
+        className={`pointer-events-none block h-5 w-5 rounded-full bg-background shadow-sm transition-transform ${checked ? "translate-x-5" : "translate-x-0"}`}
+      />
+    </button>
   );
 }

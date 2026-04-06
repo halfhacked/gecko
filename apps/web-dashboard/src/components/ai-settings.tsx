@@ -30,7 +30,6 @@ interface AiSettings {
   apiKey: string;
   hasApiKey: boolean;
   model: string;
-  autoSummarize: boolean;
   baseURL: string;
   sdkType: SdkType | "";
 }
@@ -46,7 +45,6 @@ export function AiSettingsSection() {
     apiKey: "",
     hasApiKey: false,
     model: "",
-    autoSummarize: false,
     baseURL: "",
     sdkType: "",
   });
@@ -99,7 +97,6 @@ export function AiSettingsSection() {
       const body: Record<string, unknown> = {
         provider: settings.provider,
         model: settings.model,
-        autoSummarize: settings.autoSummarize,
       };
       // Only send apiKey if user actually changed it
       if (apiKeyChanged) {
@@ -374,31 +371,6 @@ export function AiSettingsSection() {
           />
         </div>
 
-        {/* Auto-summarize toggle */}
-        <div className="flex items-start justify-between gap-4 sm:col-span-2">
-          <div className="min-w-0">
-            <Label className="text-sm">Auto-summarize</Label>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Automatically generate AI summaries for screen time sessions.
-            </p>
-          </div>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={settings.autoSummarize}
-            onClick={() =>
-              setSettings((s) => ({
-                ...s,
-                autoSummarize: !s.autoSummarize,
-              }))
-            }
-            className={`relative mt-0.5 inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${settings.autoSummarize ? "bg-foreground" : "bg-secondary"}`}
-          >
-            <span
-              className={`pointer-events-none block h-5 w-5 rounded-full bg-background shadow-sm transition-transform ${settings.autoSummarize ? "translate-x-5" : "translate-x-0"}`}
-            />
-          </button>
-        </div>
       </div>
 
       {/* Actions */}
