@@ -7,7 +7,7 @@ import { defineConfig, devices } from "@playwright/test";
  * Google OAuth. Tests drive a real Chromium browser.
  */
 export default defineConfig({
-  testDir: "./src/__tests__/bdd",
+  testDir: "./e2e/bdd",
   outputDir: "./test-results",
   fullyParallel: false, // serial — pages share state (e.g. settings changes)
   forbidOnly: !!process.env.CI,
