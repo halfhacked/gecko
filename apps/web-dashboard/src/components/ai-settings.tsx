@@ -8,12 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
 import {
-  AI_PROVIDERS,
-  ALL_PROVIDER_IDS,
+  BUILTIN_PROVIDERS,
   CUSTOM_PROVIDER_INFO,
-  type AiProvider,
+  type BuiltinProvider,
   type SdkType,
-} from "@/services/ai";
+} from "@nocoo/next-ai";
 import {
   DEFAULT_PROMPT_SECTION_1,
   DEFAULT_PROMPT_SECTION_2,
@@ -21,6 +20,10 @@ import {
   DEFAULT_PROMPT_SECTION_4,
   PROMPT_TEMPLATE_VARIABLES,
 } from "@/services/prompt-defaults";
+
+/** All valid provider IDs (including "custom"). */
+const ALL_PROVIDER_IDS = [...Object.keys(BUILTIN_PROVIDERS), "custom"] as const;
+type AiProvider = (typeof ALL_PROVIDER_IDS)[number];
 
 interface AiSettings {
   provider: AiProvider | "";
@@ -67,7 +70,7 @@ export function AiSettingsSection() {
 
         // Determine if the saved model is a custom one (not in presets)
         if (data.provider && data.provider !== "custom" && data.model) {
-          const info = AI_PROVIDERS[data.provider as Exclude<AiProvider, "custom">];
+          const info = BUILTIN_PROVIDERS[data.provider as BuiltinProvider];
           if (info && !info.models.includes(data.model)) {
             setIsCustomModel(true);
             setCustomModelInput(data.model);
@@ -85,7 +88,7 @@ export function AiSettingsSection() {
   const isCustomProvider = settings.provider === "custom";
   const providerInfo =
     settings.provider && !isCustomProvider
-      ? AI_PROVIDERS[settings.provider as Exclude<AiProvider, "custom">]
+      ? BUILTIN_PROVIDERS[settings.provider as BuiltinProvider]
       : null;
   const presetModels = providerInfo?.models ?? [];
 
@@ -170,7 +173,7 @@ export function AiSettingsSection() {
       return;
     }
 
-    const info = AI_PROVIDERS[provider as Exclude<AiProvider, "custom">];
+    const info = BUILTIN_PROVIDERS[provider as BuiltinProvider];
     setSettings((s) => ({
       ...s,
       provider,
@@ -233,7 +236,7 @@ export function AiSettingsSection() {
               const label =
                 id === "custom"
                   ? CUSTOM_PROVIDER_INFO.label
-                  : AI_PROVIDERS[id].label;
+                  : BUILTIN_PROVIDERS[id as BuiltinProvider].label;
               return (
                 <option key={id} value={id}>
                   {label}

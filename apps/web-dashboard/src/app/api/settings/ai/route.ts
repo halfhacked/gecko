@@ -5,7 +5,7 @@
 
 import { requireSession, jsonOk, jsonError } from "@/lib/api-helpers";
 import { settingsRepo } from "@/lib/settings-repo";
-import { isValidProvider, type AiProvider, type SdkType } from "@/services/ai";
+import { isValidProvider, type AiProvider, type SdkType } from "@nocoo/next-ai";
 
 export const dynamic = "force-dynamic";
 

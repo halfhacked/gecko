@@ -8,10 +8,9 @@ import { requireSession, jsonOk, jsonError } from "@/lib/api-helpers";
 import { settingsRepo } from "@/lib/settings-repo";
 import {
   resolveAiConfig,
-  createAiClient,
-  type AiProvider,
-  type SdkType,
-} from "@/services/ai";
+  createAiModel,
+} from "@nocoo/next-ai/server";
+import type { AiSettingsInput } from "@nocoo/next-ai";
 import { generateText } from "ai";
 
 export const dynamic = "force-dynamic";
@@ -34,18 +33,19 @@ export async function POST(): Promise<Response> {
   }
 
   try {
-    const config = resolveAiConfig({
-      provider: provider as AiProvider,
+    const settings: AiSettingsInput = {
+      provider,
       apiKey,
       model,
       baseURL: baseURL || undefined,
-      sdkType: (sdkType || undefined) as SdkType | undefined,
-    });
+      sdkType: sdkType ? (sdkType as "anthropic" | "openai") : undefined,
+    };
 
-    const client = createAiClient(config);
+    const config = resolveAiConfig(settings);
+    const aiModel = createAiModel(config);
 
     const { text } = await generateText({
-      model: client(config.model),
+      model: aiModel,
       prompt: "Reply with exactly: OK",
       maxOutputTokens: 10,
     });

@@ -13,10 +13,9 @@ import { settingsRepo } from "@/lib/settings-repo";
 import { dailySummaryRepo } from "@/lib/daily-summary-repo";
 import {
   resolveAiConfig,
-  createAiClient,
-  type AiProvider,
-  type SdkType,
-} from "@/services/ai";
+  createAiModel,
+} from "@nocoo/next-ai/server";
+import type { AiSettingsInput } from "@nocoo/next-ai";
 import { generateText } from "ai";
 import {
   computeDailyStats,
@@ -390,13 +389,14 @@ export async function runAnalysis(
 
   let config;
   try {
-    config = resolveAiConfig({
-      provider: settings.provider as AiProvider,
+    const input: AiSettingsInput = {
+      provider: settings.provider,
       apiKey: settings.apiKey,
       model: settings.model,
       baseURL: settings.baseURL || undefined,
-      sdkType: (settings.sdkType || undefined) as SdkType | undefined,
-    });
+      sdkType: settings.sdkType ? (settings.sdkType as "anthropic" | "openai") : undefined,
+    };
+    config = resolveAiConfig(input);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Invalid AI configuration";
     return { ok: false, reason: "no_ai_config", message: msg };
@@ -430,10 +430,10 @@ export async function runAnalysis(
   let durationMs: number;
 
   try {
-    const client = createAiClient(config);
+    const aiModel = createAiModel(config);
     const startMs = Date.now();
     const response = await generateText({
-      model: client(config.model),
+      model: aiModel,
       prompt,
       maxOutputTokens: 4096,
       abortSignal: AbortSignal.timeout(55_000),
