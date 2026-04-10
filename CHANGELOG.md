@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.8.2] - 2026-04-10
+
+### Mac App
+
+#### Fixed
+- **Auto-start tracking on login item launch**: Fixed issue where tracking wouldn't automatically start when Gecko launched as a login item after system restart. Added primary auto-start logic in `GeckoApp.init()` since `MenuBarExtra` content closures are lazily evaluated and only execute when the user clicks the menu bar icon.
+
 ## [1.8.1] - 2026-04-06
 
 ### Web Dashboard
