@@ -48,6 +48,25 @@ struct GeckoApp: App {
         _settingsViewModel = StateObject(
             wrappedValue: SettingsViewModel(settingsManager: settings, syncService: sync)
         )
+
+        // Primary auto-start: runs after app finishes launching.
+        // This is the most reliable path — init() always executes regardless of
+        // how the app was launched (login item, double-click, CLI, etc.).
+        // The delay ensures StateObjects are fully initialized before we access them.
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(500))
+            guard settings.autoStartTracking else { return }
+            guard !engine.isTracking else { return }
+
+            // Wait up to ~6s for permissions
+            for _ in 0..<6 {
+                if permission.allPermissionsGranted {
+                    engine.start()
+                    return
+                }
+                try? await Task.sleep(for: .seconds(1))
+            }
+        }
     }
 
     var body: some Scene {
