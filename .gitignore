@@ -28,6 +28,7 @@ node_modules/
 
 # Build artifacts
 build/
+*.tsbuildinfo
 
 # IDE
 .vscode/

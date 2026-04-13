@@ -264,7 +264,7 @@ final class SettingsViewModelTests: XCTestCase {
         let result = viewModel.saveSyncSettings()
 
         XCTAssertFalse(result)
-        XCTAssertEqual(viewModel.syncUrlValidationError, "Server URL must use https://.")
+        XCTAssertEqual(viewModel.syncUrlValidationError, "Server URL must use https:// (or http://localhost for local dev).")
         XCTAssertEqual(manager.syncServerUrl, SettingsManager.defaultSyncServerUrl,
                        "Settings should not be saved when URL validation fails")
     }

@@ -152,7 +152,7 @@ enum BrowserURLFetcher {
 
         let parts = output.components(separatedBy: "\t")
 
-        let url = parts.indices.contains(0) && !parts[0].isEmpty ? parts[0] : nil
+        let url = parts.indices.contains(0) && !parts[0].isEmpty ? String(parts[0].prefix(200)) : nil
         let tabTitle = parts.indices.contains(1) && !parts[1].isEmpty ? parts[1] : nil
         let tabCount: Int? = parts.indices.contains(2) ? Int(parts[2]) : nil
 

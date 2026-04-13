@@ -16,7 +16,7 @@ PID_FILE="/tmp/gecko-e2e-server.pid"
 HEALTH_TIMEOUT=30  # seconds
 
 # D1 test database ID — gecko-test instance (isolated from production)
-CF_D1_DATABASE_ID_TEST="bbe41479-5eeb-4598-abc5-12ccebcb9465"
+CF_D1_DATABASE_ID_TEST="38cf80a4-be1b-4532-8781-f9b2ef706578"
 
 start_server() {
   local port="${1:?Usage: e2e-server.sh start <port>}"

@@ -191,8 +191,9 @@ final class SettingsViewModel: ObservableObject {
         // Validate URL is HTTPS
         let url = editingSyncServerUrl.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let parsed = URL(string: url),
-              parsed.scheme?.lowercased() == "https" else {
-            syncUrlValidationError = "Server URL must use https://."
+              let scheme = parsed.scheme?.lowercased(),
+              scheme == "https" || (scheme == "http" && parsed.host == "localhost") else {
+            syncUrlValidationError = "Server URL must use https:// (or http://localhost for local dev)."
             return false
         }
         syncUrlValidationError = nil
