@@ -14,7 +14,7 @@ jobs:
       run:
         working-directory: apps/web-dashboard
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -45,9 +45,9 @@ jobs:
       CF_D1_DATABASE_ID_TEST: ${{ secrets.CF_D1_DATABASE_ID_TEST }}
       E2E_SKIP_AUTH: "true"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
 
@@ -82,7 +82,7 @@ jobs:
       run:
         working-directory: apps/web-dashboard
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -108,7 +108,7 @@ jobs:
       run:
         working-directory: apps/mac-client
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install SwiftLint
         run: brew install swiftlint
