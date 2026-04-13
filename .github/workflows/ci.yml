@@ -5,15 +5,102 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
-  workflow_dispatch:
 
 jobs:
-  quality:
-    uses: nocoo/base-ci/.github/workflows/bun-quality.yml@v2026.1
-    with:
-      pre-command: "cd apps/web-dashboard && bun install --frozen-lockfile"
-      test-command: "bun run --cwd apps/web-dashboard test:coverage"
-      lint-command: "bun run --cwd apps/web-dashboard lint"
-      typecheck-command: "bun run --cwd apps/web-dashboard typecheck"
-      enable-l2: "false"
-    secrets: inherit
+  web:
+    name: Web Dashboard
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web-dashboard
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install --frozen-lockfile
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Lint
+        run: bunx eslint --max-warnings 0
+
+      - name: Unit tests + coverage
+        run: bun run test:coverage
+
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: web
+    defaults:
+      run:
+        working-directory: apps/web-dashboard
+    env:
+      CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+      CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+      CF_D1_DATABASE_ID_TEST: ${{ secrets.CF_D1_DATABASE_ID_TEST }}
+      E2E_SKIP_AUTH: "true"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install --frozen-lockfile
+
+      - name: Verify test database
+        run: bun run verify:test-db
+
+      - name: E2E tests
+        run: bun run test:e2e
+
+  security:
+    name: Security Gate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web-dashboard
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install --frozen-lockfile
+
+      - name: Install gitleaks
+        run: |
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz | tar xz -C /usr/local/bin gitleaks
+
+      - name: Security gate
+        run: bun run gate:security
+
+  mac:
+    name: Mac Client
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: apps/mac-client
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: SwiftLint
+        run: swiftlint --strict
+
+      - name: Build & test
+        run: |
+          xcodebuild test \
+            -project Gecko.xcodeproj \
+            -scheme Gecko \
+            -destination 'platform=macOS' \
+            -only-testing:GeckoTests \
+            -quiet \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO
