@@ -436,7 +436,7 @@ export async function runAnalysis(
     const response = await generateText({
       model: aiModel,
       prompt,
-      maxOutputTokens: 4096,
+      maxOutputTokens: 8192,
       abortSignal: AbortSignal.timeout(120_000),
     });
     text = response.text;
