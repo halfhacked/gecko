@@ -424,7 +424,8 @@ export async function runAnalysis(
     Object.keys(customSections).length > 0 ? customSections : undefined,
   );
 
-  // 5. Call AI provider (55s timeout)
+  // 5. Call AI provider (120s timeout — Railway's outbound latency to
+  //    Anthropic is significantly higher than local, causing 55s timeouts)
   let text: string;
   let usage: { promptTokens?: number; completionTokens?: number; totalTokens?: number } | undefined;
   let durationMs: number;
@@ -436,7 +437,7 @@ export async function runAnalysis(
       model: aiModel,
       prompt,
       maxOutputTokens: 4096,
-      abortSignal: AbortSignal.timeout(55_000),
+      abortSignal: AbortSignal.timeout(120_000),
     });
     text = response.text;
     usage = response.usage;
