@@ -58,15 +58,15 @@ export const DEFAULT_PROMPT_SECTION_4 =
   `### 输出格式
 请以 JSON 格式返回分析结果，包含以下字段：
 - score: 你给出的综合评分（1-100整数，基于实际有效工作，排除闲置时间）
-- highlights: 今日亮点（字符串数组，2-4条，中文）
-- improvements: 改进建议（字符串数组，2-4条，中文）
+- highlights: 今日亮点（字符串数组，2-4条，中文，每条 ≤30 字，简洁要点不要长句）
+- improvements: 改进建议（字符串数组，2-4条，中文，每条 ≤30 字，简洁要点不要长句）
 - timeSegments: 时段分析（对象数组，3-6条），每个对象包含：
   - timeRange: 时间范围，如 "09:00-11:30"
   - label: 该时段的 focus 方向标签，如 "前端开发"、"文档阅读"、"休息/闲置"
-  - description: 该时段的简要描述（中文，1-2句话）
-- summary: 综合总结（Markdown 格式，中文，300-500字，包含对工作内容和浏览内容的深度分析）
+  - description: 该时段的简要描述（中文，≤40 字，一句话）
+- summary: 综合总结（Markdown 格式，中文，200-300字，包含对工作内容和浏览内容的深度分析）
 
-只返回 JSON，不要包含其他内容。不要使用 markdown 代码块包裹。`;
+严格遵守长度上限。只返回 JSON，不要包含其他内容。不要使用 markdown 代码块包裹。`;
 
 /** All template variables available for Section 2 with descriptions and examples. */
 export const PROMPT_TEMPLATE_VARIABLES = [
