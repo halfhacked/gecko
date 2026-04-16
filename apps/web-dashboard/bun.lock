@@ -12,7 +12,7 @@
         "ai": "^6.0.104",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
-        "hono": "^4.12.12",
+        "hono": "^4.12.14",
         "lucide-react": "^0.575.0",
         "next": "^16.2.1",
         "next-auth": "^5.0.0-beta.30",
@@ -48,7 +48,7 @@
     "brace-expansion": "^2.0.2",
     "express-rate-limit": "^8.2.2",
     "flatted": "^3.4.0",
-    "hono": "^4.12.12",
+    "hono": "^4.12.14",
     "path-to-regexp": "^8.4.0",
     "picomatch": "^4.0.4",
     "serialize-javascript": "^7.0.5",
@@ -1055,7 +1055,7 @@
 
     "hex-rgb": ["hex-rgb@4.3.0", "", {}, "sha512-Ox1pJVrDCyGHMG9CFg1tmrRUMRPRsAWYc/PinY0XzJU4K7y7vjNoLKIQ7BR5UJMCxNN8EM1MNDmHWA/B3aZUuw=="],
 
-    "hono": ["hono@4.12.12", "", {}, "sha512-p1JfQMKaceuCbpJKAPKVqyqviZdS0eUxH9v82oWo1kb9xjQ5wA6iP3FNVAPDFlz5/p7d45lO+BpSk1tuSZMF4Q=="],
+    "hono": ["hono@4.12.14", "", {}, "sha512-am5zfg3yu6sqn5yjKBNqhnTX7Cv+m00ox+7jbaKkrLMRJ4rAdldd1xPd/JzbBWspqaQv6RSTrgFN95EsfhC+7w=="],
 
     "html-url-attributes": ["html-url-attributes@3.0.1", "", {}, "sha512-ol6UPyBWqsrO6EJySPz2O7ZSr856WDrEzM5zMqp+FJJLGMW35cLYmmZnl0vztAZxRUoNZJFTCohfjuIJ8I4QBQ=="],
 
