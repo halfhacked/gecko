@@ -16,6 +16,7 @@ mock.module("server-only", () => ({}));
 export const __testOverrides: {
   resolveAiConfig?: ((input: Record<string, unknown>) => unknown) | null;
   generateText?: ((opts: Record<string, unknown>) => Promise<unknown>) | null;
+  generateObject?: ((opts: Record<string, unknown>) => Promise<unknown>) | null;
 } = {};
 
 const defaultResolveAiConfig = (input: Record<string, unknown>) => ({
@@ -34,13 +35,40 @@ mock.module("@nocoo/next-ai/server", () => ({
   createAiModel: () => "mock-model",
 }));
 
-// Mock the "ai" module's generateText so tests can control AI responses.
+// Mock the "ai" module's generateText / generateObject so tests can control
+// AI responses. NoObjectGeneratedError is mocked with a minimal stand-in that
+// supports the isInstance static used by analyze-core's error handling.
+class MockNoObjectGeneratedError extends Error {
+  readonly text: string | undefined;
+  readonly finishReason: string | undefined;
+  readonly usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number } | undefined;
+  constructor(opts: { message?: string; text?: string; finishReason?: string; usage?: { inputTokens?: number; outputTokens?: number; totalTokens?: number } } = {}) {
+    super(opts.message ?? "No object generated");
+    this.name = "AI_NoObjectGeneratedError";
+    this.text = opts.text;
+    this.finishReason = opts.finishReason;
+    this.usage = opts.usage;
+  }
+  static isInstance(err: unknown): err is MockNoObjectGeneratedError {
+    return err instanceof MockNoObjectGeneratedError;
+  }
+}
+
 mock.module("ai", () => ({
   generateText: (opts: Record<string, unknown>) => {
     if (__testOverrides.generateText) {
       return __testOverrides.generateText(opts);
     }
-    // Default: reject (simulates AI SDK failure when no D1 mock handles it)
     return Promise.reject(new Error("generateText not mocked"));
   },
+  generateObject: (opts: Record<string, unknown>) => {
+    if (__testOverrides.generateObject) {
+      return __testOverrides.generateObject(opts);
+    }
+    return Promise.reject(new Error("generateObject not mocked"));
+  },
+  NoObjectGeneratedError: MockNoObjectGeneratedError,
 }));
+
+// Re-export so tests can throw the same error type analyze-core checks for.
+export const TestNoObjectGeneratedError = MockNoObjectGeneratedError;

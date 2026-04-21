@@ -362,11 +362,15 @@ describe("runAnalysis", () => {
   });
 
   test("returns parse_error when AI response is unparseable", async () => {
-    const { __testOverrides } = await import("../preload");
-    __testOverrides.generateText = async () => ({
-      text: "This is not valid JSON at all",
-      usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 },
-    });
+    const { __testOverrides, TestNoObjectGeneratedError } = await import("../preload");
+    __testOverrides.generateObject = async () => {
+      throw new TestNoObjectGeneratedError({
+        message: "schema validation failed",
+        text: "This is not valid JSON at all",
+        finishReason: "stop",
+        usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+      });
+    };
 
     mockD1([
       // 1. loadAiSettings
@@ -389,7 +393,7 @@ describe("runAnalysis", () => {
       expect(result.reason).toBe("parse_error");
     }
 
-    __testOverrides.generateText = null;
+    __testOverrides.generateObject = null;
   });
 
   test("returns success and caches result on valid AI response", async () => {
@@ -402,9 +406,10 @@ describe("runAnalysis", () => {
     };
 
     const { __testOverrides } = await import("../preload");
-    __testOverrides.generateText = async () => ({
-      text: JSON.stringify(validResult),
-      usage: { promptTokens: 100, completionTokens: 200, totalTokens: 300 },
+    __testOverrides.generateObject = async () => ({
+      object: validResult,
+      usage: { inputTokens: 100, outputTokens: 200, totalTokens: 300 },
+      finishReason: "stop",
     });
 
     const { calls } = mockD1([
@@ -439,7 +444,7 @@ describe("runAnalysis", () => {
     const upsertQuery = calls.find((c) => c.sql.includes("INSERT") || c.sql.includes("REPLACE"));
     expect(upsertQuery).toBeDefined();
 
-    __testOverrides.generateText = null;
+    __testOverrides.generateObject = null;
   });
 
   test("succeeds even when cache upsert fails (non-fatal)", async () => {
@@ -452,9 +457,10 @@ describe("runAnalysis", () => {
     };
 
     const { __testOverrides } = await import("../preload");
-    __testOverrides.generateText = async () => ({
-      text: JSON.stringify(validResult),
-      usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 },
+    __testOverrides.generateObject = async () => ({
+      object: validResult,
+      usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+      finishReason: "stop",
     });
 
     // D1 mock: upsert call will fail
@@ -507,12 +513,12 @@ describe("runAnalysis", () => {
       expect(result.score).toBe(80);
     }
 
-    __testOverrides.generateText = null;
+    __testOverrides.generateObject = null;
   });
 
   test("returns ai_error with timeout message for DOMException TimeoutError", async () => {
     const { __testOverrides } = await import("../preload");
-    __testOverrides.generateText = async () => {
+    __testOverrides.generateObject = async () => {
       const err = new DOMException("The operation was aborted.", "TimeoutError");
       throw err;
     };
@@ -539,7 +545,7 @@ describe("runAnalysis", () => {
       expect(result.message).toContain("timed out");
     }
 
-    __testOverrides.generateText = null;
+    __testOverrides.generateObject = null;
   });
 
   test("returns ai_error when AI provider call fails", async () => {

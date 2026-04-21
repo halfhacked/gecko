@@ -16,7 +16,8 @@ import {
   createAiModel,
 } from "@nocoo/next-ai/server";
 import type { AiSettingsInput } from "@nocoo/next-ai";
-import { generateText } from "ai";
+import { generateObject, NoObjectGeneratedError } from "ai";
+import { z } from "zod";
 import {
   computeDailyStats,
   type DailyStats,
@@ -85,6 +86,28 @@ export interface AiSettings {
 export type AnalysisOutcome =
   | { ok: true; score: number; model: string; provider: string; durationMs: number; result: AiAnalysisResult; prompt: string; stats: DailyStats; usage?: { inputTokens: number; outputTokens: number; totalTokens: number } }
   | { ok: false; reason: "no_ai_config" | "no_sessions" | "ai_error" | "parse_error"; message: string };
+
+/**
+ * Zod schema for AiAnalysisResult. Passed to generateObject so the provider
+ * enforces structural validity via tool-use / structured output — eliminates
+ * the class of failures where the model emits unescaped ASCII double quotes
+ * inside Chinese string values and breaks JSON.parse.
+ */
+export const AiAnalysisSchema = z.object({
+  score: z.number().int().min(1).max(100)
+    .describe("综合评分 1-100 的整数，基于实际有效工作，排除闲置时间"),
+  highlights: z.array(z.string()).min(1).max(6)
+    .describe("今日亮点，2-4 条，中文，每条不超过 30 字，简洁要点"),
+  improvements: z.array(z.string()).min(1).max(6)
+    .describe("改进建议，2-4 条，中文，每条不超过 30 字，简洁要点"),
+  timeSegments: z.array(z.object({
+    timeRange: z.string().describe('时间范围，如 "09:00-11:30"'),
+    label: z.string().describe("该时段的 focus 方向标签，如 前端开发、文档阅读、休息/闲置"),
+    description: z.string().describe("该时段简要描述，中文，不超过 40 字，一句话"),
+  })).max(8).describe("时段分析，3-6 条"),
+  summary: z.string().min(1)
+    .describe("综合总结，Markdown 格式，中文，200-300 字，包含对工作内容和浏览内容的深度分析"),
+});
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -424,9 +447,12 @@ export async function runAnalysis(
     Object.keys(customSections).length > 0 ? customSections : undefined,
   );
 
-  // 5. Call AI provider (120s timeout — Railway's outbound latency to
-  //    Anthropic is significantly higher than local, causing 55s timeouts)
-  let text: string;
+  // 5. Call AI provider via generateObject (120s timeout — Railway's outbound
+  //    latency to Anthropic is significantly higher than local).
+  //    generateObject enforces the schema via provider tool-use, eliminating
+  //    the parse failures we saw with generateText + JSON.parse (model would
+  //    sometimes emit unescaped ASCII `"` inside Chinese string values).
+  let result: AiAnalysisResult;
   let usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number } | undefined;
   let finishReason: string | undefined;
   let durationMs: number;
@@ -434,20 +460,29 @@ export async function runAnalysis(
   try {
     const aiModel = createAiModel(config);
     const startMs = Date.now();
-    const response = await generateText({
+    const response = await generateObject({
       model: aiModel,
+      schema: AiAnalysisSchema,
+      schemaName: "AiAnalysisResult",
+      schemaDescription: "Gecko daily productivity analysis result",
       prompt,
       maxOutputTokens: 8192,
       abortSignal: AbortSignal.timeout(120_000),
     });
-    text = response.text;
+    result = response.object;
     usage = response.usage;
     finishReason = response.finishReason;
     durationMs = Date.now() - startMs;
     console.log(
-      `[analyze-core] AI call succeeded: provider=${config.provider} model=${config.model} duration=${durationMs}ms finishReason=${finishReason} inputTokens=${usage?.inputTokens ?? "?"} outputTokens=${usage?.outputTokens ?? "?"} totalTokens=${usage?.totalTokens ?? "?"} textLength=${text.length}`,
+      `[analyze-core] AI call succeeded: provider=${config.provider} model=${config.model} duration=${durationMs}ms finishReason=${finishReason} inputTokens=${usage?.inputTokens ?? "?"} outputTokens=${usage?.outputTokens ?? "?"} totalTokens=${usage?.totalTokens ?? "?"}`,
     );
   } catch (err) {
+    if (NoObjectGeneratedError.isInstance(err)) {
+      console.error(
+        `[analyze-core] Failed to generate valid object: ${err.message}. finishReason=${err.finishReason} outputTokens=${err.usage?.outputTokens ?? "?"} textLength=${err.text?.length ?? 0}. Raw text (full): ${err.text ?? "(none)"}`,
+      );
+      return { ok: false, reason: "parse_error", message: `Failed to generate valid object: ${err.message}` };
+    }
     const message = err instanceof Error ? err.message : String(err);
     const isTimeout = err instanceof DOMException && err.name === "TimeoutError";
     console.error(
@@ -458,18 +493,6 @@ export async function runAnalysis(
       reason: "ai_error",
       message: isTimeout ? "AI provider timed out. Try again or use a faster model." : `AI provider error: ${message}`,
     };
-  }
-
-  // 6. Parse AI response
-  let result: AiAnalysisResult;
-  try {
-    result = parseAiResponse(text);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error(
-      `[analyze-core] Failed to parse AI response: ${message}. finishReason=${finishReason} outputTokens=${usage?.outputTokens ?? "?"} textLength=${text.length}. Raw text (full): ${text}`,
-    );
-    return { ok: false, reason: "parse_error", message: `Failed to parse AI response: ${message}` };
   }
 
   // 7. Cache result (non-fatal)

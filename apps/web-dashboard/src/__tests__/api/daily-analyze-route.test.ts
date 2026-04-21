@@ -305,11 +305,15 @@ describe("POST /api/daily/[date]/analyze", () => {
   });
 
   test("returns 502 for parse_error from runAnalysis", async () => {
-    const { __testOverrides } = await import("../preload");
-    __testOverrides.generateText = async () => ({
-      text: "not valid json at all",
-      usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 },
-    });
+    const { __testOverrides, TestNoObjectGeneratedError } = await import("../preload");
+    __testOverrides.generateObject = async () => {
+      throw new TestNoObjectGeneratedError({
+        message: "schema validation failed",
+        text: "not valid json at all",
+        finishReason: "stop",
+        usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+      });
+    };
 
     mockD1([
       // 1. getUserTimezone
@@ -330,14 +334,14 @@ describe("POST /api/daily/[date]/analyze", () => {
     expect(res.status).toBe(502);
 
     const data = await res.json();
-    expect(data.error).toContain("Failed to parse AI response");
+    expect(data.error).toContain("Failed to generate valid object");
 
-    __testOverrides.generateText = null;
+    __testOverrides.generateObject = null;
   });
 
   test("returns 504 for AI timeout error", async () => {
     const { __testOverrides } = await import("../preload");
-    __testOverrides.generateText = async () => {
+    __testOverrides.generateObject = async () => {
       throw new DOMException("The operation was aborted.", "TimeoutError");
     };
 
@@ -362,7 +366,7 @@ describe("POST /api/daily/[date]/analyze", () => {
     const data = await res.json();
     expect(data.error).toContain("timed out");
 
-    __testOverrides.generateText = null;
+    __testOverrides.generateObject = null;
   });
 
   test("returns success with email notification on manual analyze", async () => {
@@ -375,9 +379,10 @@ describe("POST /api/daily/[date]/analyze", () => {
     };
 
     const { __testOverrides } = await import("../preload");
-    __testOverrides.generateText = async () => ({
-      text: JSON.stringify(validResult),
-      usage: { promptTokens: 100, completionTokens: 200, totalTokens: 300 },
+    __testOverrides.generateObject = async () => ({
+      object: validResult,
+      usage: { inputTokens: 100, outputTokens: 200, totalTokens: 300 },
+      finishReason: "stop",
     });
 
     mockD1([
@@ -413,7 +418,7 @@ describe("POST /api/daily/[date]/analyze", () => {
     expect(data.durationMs).toBeDefined();
     expect(data.prompt).toBeDefined();
 
-    __testOverrides.generateText = null;
+    __testOverrides.generateObject = null;
   });
 
   test("returns success without email when notification not enabled", async () => {
@@ -426,9 +431,10 @@ describe("POST /api/daily/[date]/analyze", () => {
     };
 
     const { __testOverrides } = await import("../preload");
-    __testOverrides.generateText = async () => ({
-      text: JSON.stringify(validResult),
-      usage: { promptTokens: 50, completionTokens: 100, totalTokens: 150 },
+    __testOverrides.generateObject = async () => ({
+      object: validResult,
+      usage: { inputTokens: 50, outputTokens: 100, totalTokens: 150 },
+      finishReason: "stop",
     });
 
     mockD1([
@@ -457,6 +463,6 @@ describe("POST /api/daily/[date]/analyze", () => {
     expect(data.cached).toBe(false);
     expect(data.score).toBe(85);
 
-    __testOverrides.generateText = null;
+    __testOverrides.generateObject = null;
   });
 });
