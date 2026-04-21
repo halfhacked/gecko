@@ -91,25 +91,26 @@ export type AnalysisOutcome =
  * Zod schema for AiAnalysisResult. Passed to generateObject so the provider
  * enforces structural validity via tool-use / structured output.
  *
- * Numeric/array bounds are intentionally omitted from the schema: Anthropic's
- * structured-output validator rejects minimum/maximum on integer types and
- * may reject minItems/maxItems on arrays. Length guidance lives in the field
- * descriptions and is clamped post-generation below.
+ * Intentionally kept structure-only — no per-field descriptions, no numeric
+ * or array bounds:
+ *   - Anthropic's structured-output validator rejects minimum/maximum on
+ *     integer types and may reject minItems/maxItems on arrays.
+ *   - Content rules (lengths, examples, tone) belong in the prompt — users
+ *     customize those via the Settings UI. Putting them here would remove
+ *     them from the customization surface.
+ *
+ * Post-generation validation clamps the score and rejects empty fields.
  */
 export const AiAnalysisSchema = z.object({
-  score: z.number()
-    .describe("综合评分 1-100 的整数，基于实际有效工作，排除闲置时间"),
-  highlights: z.array(z.string())
-    .describe("今日亮点，2-4 条，中文，每条不超过 30 字，简洁要点"),
-  improvements: z.array(z.string())
-    .describe("改进建议，2-4 条，中文，每条不超过 30 字，简洁要点"),
+  score: z.number(),
+  highlights: z.array(z.string()),
+  improvements: z.array(z.string()),
   timeSegments: z.array(z.object({
-    timeRange: z.string().describe('时间范围，如 "09:00-11:30"'),
-    label: z.string().describe("该时段的 focus 方向标签，如 前端开发、文档阅读、休息/闲置"),
-    description: z.string().describe("该时段简要描述，中文，不超过 40 字，一句话"),
-  })).describe("时段分析，3-6 条"),
-  summary: z.string()
-    .describe("综合总结，Markdown 格式，中文，200-300 字，包含对工作内容和浏览内容的深度分析"),
+    timeRange: z.string(),
+    label: z.string(),
+    description: z.string(),
+  })),
+  summary: z.string(),
 });
 
 // ---------------------------------------------------------------------------
@@ -344,7 +345,7 @@ export function buildPrompt(
 
   const s2 = expandTemplate(s2Raw, vars);
 
-  return [s1, s2, s3, s4].join("\n\n");
+  return [s1, s2, s3, s4].filter(Boolean).join("\n\n");
 }
 
 // ---------------------------------------------------------------------------

@@ -53,7 +53,16 @@ export const DEFAULT_PROMPT_SECTION_3 =
    - 分析时请明确区分"工作流内切换"和"分心切换"，给出具体例子
    - 如果用户已对应用设置了分类或标签，优先使用这些信息判断切换性质`;
 
-/** Section 4 — Output format (no template variables). */
+/**
+ * Section 4 — Output format (no template variables).
+ *
+ * Structural enforcement lives in the Zod schema passed to generateObject —
+ * the schema says "score is a number, highlights is a string[]", etc. This
+ * section carries the *content* guidance (lengths, example labels, style)
+ * that users are expected to tune. Do not migrate content rules from here
+ * into the schema: it would silently remove them from the customization
+ * surface exposed in the Settings UI.
+ */
 export const DEFAULT_PROMPT_SECTION_4 =
   `### 输出格式
 请以 JSON 格式返回分析结果，包含以下字段：
@@ -66,7 +75,7 @@ export const DEFAULT_PROMPT_SECTION_4 =
   - description: 该时段的简要描述（中文，≤40 字，一句话）
 - summary: 综合总结（Markdown 格式，中文，200-300字，包含对工作内容和浏览内容的深度分析）
 
-严格遵守长度上限。只返回 JSON，不要包含其他内容。不要使用 markdown 代码块包裹。`;
+严格遵守长度上限。`;
 
 /** All template variables available for Section 2 with descriptions and examples. */
 export const PROMPT_TEMPLATE_VARIABLES = [
