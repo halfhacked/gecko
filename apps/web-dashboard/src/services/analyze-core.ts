@@ -89,23 +89,26 @@ export type AnalysisOutcome =
 
 /**
  * Zod schema for AiAnalysisResult. Passed to generateObject so the provider
- * enforces structural validity via tool-use / structured output — eliminates
- * the class of failures where the model emits unescaped ASCII double quotes
- * inside Chinese string values and breaks JSON.parse.
+ * enforces structural validity via tool-use / structured output.
+ *
+ * Numeric/array bounds are intentionally omitted from the schema: Anthropic's
+ * structured-output validator rejects minimum/maximum on integer types and
+ * may reject minItems/maxItems on arrays. Length guidance lives in the field
+ * descriptions and is clamped post-generation below.
  */
 export const AiAnalysisSchema = z.object({
-  score: z.number().int().min(1).max(100)
+  score: z.number()
     .describe("综合评分 1-100 的整数，基于实际有效工作，排除闲置时间"),
-  highlights: z.array(z.string()).min(1).max(6)
+  highlights: z.array(z.string())
     .describe("今日亮点，2-4 条，中文，每条不超过 30 字，简洁要点"),
-  improvements: z.array(z.string()).min(1).max(6)
+  improvements: z.array(z.string())
     .describe("改进建议，2-4 条，中文，每条不超过 30 字，简洁要点"),
   timeSegments: z.array(z.object({
     timeRange: z.string().describe('时间范围，如 "09:00-11:30"'),
     label: z.string().describe("该时段的 focus 方向标签，如 前端开发、文档阅读、休息/闲置"),
     description: z.string().describe("该时段简要描述，中文，不超过 40 字，一句话"),
-  })).max(8).describe("时段分析，3-6 条"),
-  summary: z.string().min(1)
+  })).describe("时段分析，3-6 条"),
+  summary: z.string()
     .describe("综合总结，Markdown 格式，中文，200-300 字，包含对工作内容和浏览内容的深度分析"),
 });
 
@@ -447,6 +450,22 @@ export async function runAnalysis(
       message: isTimeout ? "AI provider timed out. Try again or use a faster model." : `AI provider error: ${message}`,
     };
   }
+
+  // 6. Post-generation validation. Schema bounds were dropped to keep
+  //    Anthropic's structured-output validator happy, so enforce here.
+  if (!Number.isFinite(result.score)) {
+    return { ok: false, reason: "parse_error", message: "AI returned invalid score" };
+  }
+  if (result.highlights.length === 0) {
+    return { ok: false, reason: "parse_error", message: "AI returned empty highlights" };
+  }
+  if (result.improvements.length === 0) {
+    return { ok: false, reason: "parse_error", message: "AI returned empty improvements" };
+  }
+  if (result.summary.length === 0) {
+    return { ok: false, reason: "parse_error", message: "AI returned empty summary" };
+  }
+  result.score = Math.max(1, Math.min(100, Math.round(result.score)));
 
   // 7. Cache result (non-fatal)
   try {
