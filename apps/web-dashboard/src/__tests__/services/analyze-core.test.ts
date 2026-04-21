@@ -2,7 +2,7 @@
  * Tests for services/analyze-core.ts — AI analysis pipeline.
  *
  * Uses D1 mock pattern (globalThis.fetch) for database calls and
- * bun:test mock() for the `ai` module's generateText.
+ * bun:test mock() for the `ai` module's generateObject.
  */
 
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
@@ -14,7 +14,6 @@ import {
   buildAppContextSection,
   fmtDuration,
   expandTemplate,
-  parseAiResponse,
   runAnalysis,
   type AppContext,
 } from "@/services/analyze-core";
@@ -109,54 +108,6 @@ describe("expandTemplate", () => {
 
   test("handles dotted keys", () => {
     expect(expandTemplate("{{scores.focus}}", { "scores.focus": "80" })).toBe("80");
-  });
-});
-
-describe("parseAiResponse", () => {
-  const validJson = JSON.stringify({
-    score: 72,
-    highlights: ["Good focus"],
-    improvements: ["Take breaks"],
-    timeSegments: [{ timeRange: "09:00-11:00", label: "Dev", description: "Coding" }],
-    summary: "Good day.",
-  });
-
-  test("parses valid JSON", () => {
-    const result = parseAiResponse(validJson);
-    expect(result.score).toBe(72);
-    expect(result.highlights).toEqual(["Good focus"]);
-    expect(result.timeSegments).toHaveLength(1);
-  });
-
-  test("strips markdown code fences", () => {
-    const wrapped = `\`\`\`json\n${validJson}\n\`\`\``;
-    const result = parseAiResponse(wrapped);
-    expect(result.score).toBe(72);
-  });
-
-  test("rejects invalid score", () => {
-    const json = JSON.stringify({ score: 0, highlights: ["a"], improvements: ["b"], summary: "c" });
-    expect(() => parseAiResponse(json)).toThrow("invalid score");
-  });
-
-  test("rejects score > 100", () => {
-    const json = JSON.stringify({ score: 101, highlights: ["a"], improvements: ["b"], summary: "c" });
-    expect(() => parseAiResponse(json)).toThrow("invalid score");
-  });
-
-  test("rejects empty highlights", () => {
-    const json = JSON.stringify({ score: 50, highlights: [], improvements: ["b"], summary: "c" });
-    expect(() => parseAiResponse(json)).toThrow("invalid highlights");
-  });
-
-  test("rejects empty improvements", () => {
-    const json = JSON.stringify({ score: 50, highlights: ["a"], improvements: [], summary: "c" });
-    expect(() => parseAiResponse(json)).toThrow("invalid improvements");
-  });
-
-  test("rejects empty summary", () => {
-    const json = JSON.stringify({ score: 50, highlights: ["a"], improvements: ["b"], summary: "" });
-    expect(() => parseAiResponse(json)).toThrow("invalid summary");
   });
 });
 
@@ -566,8 +517,8 @@ describe("runAnalysis", () => {
       [],
     ]);
 
-    // globalThis.fetch is mocked for D1. generateText will call the AI SDK
-    // which will fail because the mock rejects non-SQL requests.
+    // globalThis.fetch is mocked for D1. generateObject will call the AI SDK
+    // which will fail because it's not mocked via __testOverrides.
     const result = await runAnalysis("u1", "2026-03-01", "Asia/Shanghai");
     expect(result.ok).toBe(false);
     if (!result.ok) {

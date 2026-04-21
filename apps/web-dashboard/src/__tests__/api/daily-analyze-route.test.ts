@@ -2,9 +2,8 @@
  * Route-level tests for POST /api/daily/[date]/analyze.
  *
  * Stats are always computed fresh from D1 (the daily_summaries table
- * only caches AI results). AI generation itself is not tested here
- * (requires mocking generateText); pure-function coverage is in
- * daily-analyze.test.ts.
+ * only caches AI results). AI generation is exercised via the
+ * generateObject mock in preload.ts.
  */
 
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
@@ -217,11 +216,11 @@ describe("POST /api/daily/[date]/analyze", () => {
       [],
       [],
       [],
-      // generateText will fail but we're testing the skip behavior
+      // generateObject will fail but we're testing the skip behavior
     ]);
 
     const _res = await callPOST(makeAnalyzeRequest("2026-02-27", true), "2026-02-27");
-    // Will get 502 because generateText isn't mocked, but that's fine —
+    // Will get 502 because generateObject isn't mocked, but that's fine —
     // we're verifying that it reached the AI call (skipped cache).
     // The key assertion: no SQL query for daily_summaries was made.
     const cacheQueries = calls.filter((c) => c.sql.includes("daily_summaries"));

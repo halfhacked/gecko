@@ -15,7 +15,6 @@ mock.module("server-only", () => ({}));
 // resolveAiConfig can be overridden per-test via __testOverrides.resolveAiConfig.
 export const __testOverrides: {
   resolveAiConfig?: ((input: Record<string, unknown>) => unknown) | null;
-  generateText?: ((opts: Record<string, unknown>) => Promise<unknown>) | null;
   generateObject?: ((opts: Record<string, unknown>) => Promise<unknown>) | null;
 } = {};
 
@@ -35,9 +34,9 @@ mock.module("@nocoo/next-ai/server", () => ({
   createAiModel: () => "mock-model",
 }));
 
-// Mock the "ai" module's generateText / generateObject so tests can control
-// AI responses. NoObjectGeneratedError is mocked with a minimal stand-in that
-// supports the isInstance static used by analyze-core's error handling.
+// Mock the "ai" module's generateObject so tests can control AI responses.
+// NoObjectGeneratedError is mocked with a minimal stand-in that supports the
+// isInstance static used by analyze-core's error handling.
 class MockNoObjectGeneratedError extends Error {
   readonly text: string | undefined;
   readonly finishReason: string | undefined;
@@ -55,12 +54,6 @@ class MockNoObjectGeneratedError extends Error {
 }
 
 mock.module("ai", () => ({
-  generateText: (opts: Record<string, unknown>) => {
-    if (__testOverrides.generateText) {
-      return __testOverrides.generateText(opts);
-    }
-    return Promise.reject(new Error("generateText not mocked"));
-  },
   generateObject: (opts: Record<string, unknown>) => {
     if (__testOverrides.generateObject) {
       return __testOverrides.generateObject(opts);

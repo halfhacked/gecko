@@ -344,53 +344,6 @@ export function buildPrompt(
   return [s1, s2, s3, s4].join("\n\n");
 }
 
-/** Parse and validate the AI response JSON. */
-export function parseAiResponse(text: string): AiAnalysisResult {
-  let cleaned = text.trim();
-  if (cleaned.startsWith("```")) {
-    cleaned = cleaned.replace(/^```(?:json)?\s*\n?/, "").replace(/\n?```\s*$/, "");
-  }
-
-  const parsed = JSON.parse(cleaned) as Record<string, unknown>;
-
-  const score = Number(parsed.score);
-  if (!Number.isFinite(score) || score < 1 || score > 100) {
-    throw new Error("AI returned invalid score");
-  }
-
-  const highlights = parsed.highlights;
-  if (!Array.isArray(highlights) || highlights.length === 0) {
-    throw new Error("AI returned invalid highlights");
-  }
-
-  const improvements = parsed.improvements;
-  if (!Array.isArray(improvements) || improvements.length === 0) {
-    throw new Error("AI returned invalid improvements");
-  }
-
-  const summary = parsed.summary;
-  if (typeof summary !== "string" || summary.length === 0) {
-    throw new Error("AI returned invalid summary");
-  }
-
-  let timeSegments: TimeSegment[] = [];
-  if (Array.isArray(parsed.timeSegments) && parsed.timeSegments.length > 0) {
-    timeSegments = (parsed.timeSegments as Record<string, unknown>[]).map((seg) => ({
-      timeRange: String(seg.timeRange ?? ""),
-      label: String(seg.label ?? ""),
-      description: String(seg.description ?? ""),
-    })).filter((seg) => seg.timeRange && seg.label);
-  }
-
-  return {
-    score: Math.round(score),
-    highlights: highlights.map(String),
-    improvements: improvements.map(String),
-    timeSegments,
-    summary: String(summary),
-  };
-}
-
 // ---------------------------------------------------------------------------
 // Main orchestrator
 // ---------------------------------------------------------------------------
