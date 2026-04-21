@@ -83,7 +83,7 @@ export interface AiSettings {
 }
 
 export type AnalysisOutcome =
-  | { ok: true; score: number; model: string; provider: string; durationMs: number; result: AiAnalysisResult; prompt: string; stats: DailyStats; usage?: { promptTokens: number; completionTokens: number; totalTokens: number } }
+  | { ok: true; score: number; model: string; provider: string; durationMs: number; result: AiAnalysisResult; prompt: string; stats: DailyStats; usage?: { inputTokens: number; outputTokens: number; totalTokens: number } }
   | { ok: false; reason: "no_ai_config" | "no_sessions" | "ai_error" | "parse_error"; message: string };
 
 // ---------------------------------------------------------------------------
@@ -427,7 +427,8 @@ export async function runAnalysis(
   // 5. Call AI provider (120s timeout — Railway's outbound latency to
   //    Anthropic is significantly higher than local, causing 55s timeouts)
   let text: string;
-  let usage: { promptTokens?: number; completionTokens?: number; totalTokens?: number } | undefined;
+  let usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number } | undefined;
+  let finishReason: string | undefined;
   let durationMs: number;
 
   try {
@@ -441,9 +442,10 @@ export async function runAnalysis(
     });
     text = response.text;
     usage = response.usage;
+    finishReason = response.finishReason;
     durationMs = Date.now() - startMs;
     console.log(
-      `[analyze-core] AI call succeeded: provider=${config.provider} model=${config.model} duration=${durationMs}ms tokens=${usage?.totalTokens ?? "?"}`,
+      `[analyze-core] AI call succeeded: provider=${config.provider} model=${config.model} duration=${durationMs}ms finishReason=${finishReason} inputTokens=${usage?.inputTokens ?? "?"} outputTokens=${usage?.outputTokens ?? "?"} totalTokens=${usage?.totalTokens ?? "?"} textLength=${text.length}`,
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -465,7 +467,7 @@ export async function runAnalysis(
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(
-      `[analyze-core] Failed to parse AI response: ${message}. Raw text (first 500 chars): ${text.slice(0, 500)}`,
+      `[analyze-core] Failed to parse AI response: ${message}. finishReason=${finishReason} outputTokens=${usage?.outputTokens ?? "?"} textLength=${text.length}. Raw text (full): ${text}`,
     );
     return { ok: false, reason: "parse_error", message: `Failed to parse AI response: ${message}` };
   }
@@ -494,8 +496,8 @@ export async function runAnalysis(
     prompt,
     stats,
     usage: {
-      promptTokens: usage?.promptTokens ?? 0,
-      completionTokens: usage?.completionTokens ?? 0,
+      inputTokens: usage?.inputTokens ?? 0,
+      outputTokens: usage?.outputTokens ?? 0,
       totalTokens: usage?.totalTokens ?? 0,
     },
   };

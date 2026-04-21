@@ -57,8 +57,8 @@ interface DailyResponse {
 }
 
 interface TokenUsage {
-  promptTokens: number;
-  completionTokens: number;
+  inputTokens: number;
+  outputTokens: number;
   totalTokens: number;
 }
 
@@ -239,7 +239,7 @@ function ModelDetailsCard({ ai }: { ai: AnalyzeResponse }) {
     items.push({
       icon: Info,
       label: "Tokens",
-      value: `${ai.usage.promptTokens} in / ${ai.usage.completionTokens} out (${ai.usage.totalTokens} total)`,
+      value: `${ai.usage.inputTokens} in / ${ai.usage.outputTokens} out (${ai.usage.totalTokens} total)`,
     });
   }
 
