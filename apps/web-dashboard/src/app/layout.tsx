@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
-import googleFonts from "next/font/google";
+import { Inter, DM_Sans } from "next/font/google";
 import { AuthProvider } from "@/components/auth-provider";
 import "./globals.css";
-
-const Inter = googleFonts.Inter;
-const DM_Sans = googleFonts.DM_Sans;
 
 const inter = Inter({
   variable: "--font-inter",
