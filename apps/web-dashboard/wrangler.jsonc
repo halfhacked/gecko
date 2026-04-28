@@ -17,7 +17,7 @@
     {
       "binding": "DB",
       "database_name": "gecko-prod",
-      "database_id": "REPLACE_WITH_PROD_D1_ID"
+      "database_id": "178cd509-8ed8-49c4-993a-08c1c5fc36db"
     }
   ]
 }
