@@ -4,12 +4,9 @@
   "main": ".open-next/worker.js",
   "compatibility_date": "2025-09-23",
   "compatibility_flags": ["nodejs_compat"],
-  // Paid Workers tier. SSR + next-auth + LLM-streaming routes occasionally
-  // need more than the 50 ms default. CPU is wall-clock-of-execution only —
-  // time awaiting fetch() to Anthropic/OpenAI does not count.
-  "limits": {
-    "cpu_ms": 30000
-  },
+  // Re-add `"limits": { "cpu_ms": 30000 }` after upgrading to Workers Paid.
+  // SSR + next-auth + LLM-streaming routes need more than free tier's 10 ms
+  // CPU; CPU time excludes time awaiting fetch() to LLM APIs.
   "assets": {
     "binding": "ASSETS",
     "directory": ".open-next/assets"

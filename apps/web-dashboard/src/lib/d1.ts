@@ -48,8 +48,13 @@ function buildUrl(config: D1Config): string {
 }
 
 /** Look up the Worker D1 binding via OpenNext's request context.
- *  Returns undefined when not running on workerd (next dev, scripts, tests). */
+ *  Returns undefined when not running on workerd (next dev, scripts, tests).
+ *  We gate on a workerd-only global because initOpenNextCloudflareForDev()
+ *  exposes a miniflare-backed local D1 in `next dev` that has no schema. */
 async function getD1Binding(): Promise<D1Database | undefined> {
+  if (typeof globalThis === "undefined" || !("WebSocketPair" in globalThis)) {
+    return undefined;
+  }
   try {
     const { getCloudflareContext } = await import("@opennextjs/cloudflare");
     const ctx = await getCloudflareContext({ async: true });
