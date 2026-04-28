@@ -1,0 +1,23 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "gecko",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-09-23",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": ".open-next/assets"
+  },
+  "observability": {
+    "enabled": true
+  },
+  // Native D1 binding — replaces the HTTP API path for production traffic.
+  // Replace `database_id` with the production database ID before first deploy.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "gecko-prod",
+      "database_id": "REPLACE_WITH_PROD_D1_ID"
+    }
+  ]
+}

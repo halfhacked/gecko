@@ -24,3 +24,10 @@ bun.lockb
 # playwright
 test-results/
 playwright-report/
+
+# Cloudflare Workers / OpenNext
+.open-next/
+.wrangler/
+
+# Next.js auto-generated
+next-env.d.ts

@@ -1,6 +1,7 @@
-// D1 REST API client for Cloudflare D1 database access.
-// Since the web dashboard runs on Bun (not Workers), we access D1
-// via the Cloudflare REST API.
+// D1 client. On Cloudflare Workers we use the native `env.DB` binding;
+// elsewhere (next dev, scripts, tests) we fall back to the D1 REST API.
+
+import type { D1Database } from "@cloudflare/workers-types";
 
 export interface D1Config {
   accountId: string;
@@ -46,11 +47,34 @@ function buildUrl(config: D1Config): string {
   return `https://api.cloudflare.com/client/v4/accounts/${config.accountId}/d1/database/${config.databaseId}/query`;
 }
 
+/** Look up the Worker D1 binding via OpenNext's request context.
+ *  Returns undefined when not running on workerd (next dev, scripts, tests). */
+async function getD1Binding(): Promise<D1Database | undefined> {
+  try {
+    const { getCloudflareContext } = await import("@opennextjs/cloudflare");
+    const ctx = await getCloudflareContext({ async: true });
+    return (ctx?.env as { DB?: D1Database } | undefined)?.DB;
+  } catch {
+    return undefined;
+  }
+}
+
 /** Execute a raw SQL query and return the full result with meta. */
 export async function execute(
   sql: string,
   params: unknown[] = []
 ): Promise<D1ExecuteResult> {
+  // On workerd, prefer the native binding (no HTTP, no API token).
+  const binding = await getD1Binding();
+  if (binding) {
+    const stmt = params.length > 0 ? binding.prepare(sql).bind(...params) : binding.prepare(sql);
+    const r = await stmt.all();
+    return {
+      results: r.results ?? [],
+      meta: (r.meta ?? { changes: 0, last_row_id: 0 }) as D1Meta,
+    };
+  }
+
   const config = getD1Config();
   const url = buildUrl(config);
 
