@@ -22,6 +22,7 @@ function buildRedirectUrl(req: NextRequest, pathname: string): URL {
   return new URL(pathname, req.nextUrl.origin);
 }
 
+// Next.js 16 proxy convention (replaces middleware.ts)
 const authHandler = auth((req) => {
   if (SKIP_AUTH) {
     return NextResponse.next();
@@ -50,7 +51,8 @@ const authHandler = auth((req) => {
   return NextResponse.next();
 });
 
-export function middleware(request: NextRequest) {
+// Export as named 'proxy' function for Next.js 16
+export function proxy(request: NextRequest) {
   return authHandler(request, {} as never);
 }
 
