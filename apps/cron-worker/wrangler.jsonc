@@ -1,0 +1,20 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "gecko-cron",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-09-23",
+  "observability": {
+    "enabled": true
+  },
+  "triggers": {
+    // Once per hour at minute 0. Adjust if a different cadence is wanted.
+    "crons": ["0 * * * *"]
+  },
+  "vars": {
+    // Public — the URL of the dashboard Worker we POST to. Override with
+    // `wrangler deploy --var TARGET_URL:...` if the dashboard moves.
+    "TARGET_URL": "https://gecko.halfhacked.com/api/internal/cron/hourly"
+  }
+  // CRON_SECRET is set as a Worker secret via:
+  //   wrangler secret put CRON_SECRET
+}

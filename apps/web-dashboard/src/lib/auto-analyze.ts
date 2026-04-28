@@ -290,3 +290,13 @@ export function ensureAutoAnalyze(): void {
 export function resetEnsureAutoAnalyze(): void {
   _initialized = false;
 }
+
+/**
+ * Run one tick of auto-analyze synchronously. Used by the
+ * /api/internal/cron/hourly route invoked by the gecko-cron Worker.
+ * On Cloudflare Workers there is no long-running process, so we drive
+ * ticks externally instead of via setInterval.
+ */
+export async function runHourlyTick(): Promise<void> {
+  await getAutoAnalyze().onTick();
+}
