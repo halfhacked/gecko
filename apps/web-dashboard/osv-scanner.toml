@@ -4,3 +4,7 @@
 [[IgnoredVulns]]
 id = "GHSA-5f7q-jpqc-wp7h"
 reason = "DoS vulnerability in Next.js PPR mode. This project does not use PPR (experimental.ppr) or cacheComponents, and does not set NEXT_PRIVATE_MINIMAL_MODE=1, so the vulnerability is not exploitable."
+
+[[IgnoredVulns]]
+id = "GHSA-qx2v-qp2m-jg93"
+reason = "Regex DoS in postcss <8.5.10 source-map parsing — only triggerable by maliciously crafted CSS input. Next.js uses postcss at build time on trusted source CSS, not user input. The runtime server bundle does not include postcss."
