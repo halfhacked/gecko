@@ -21,7 +21,7 @@ This project includes both a **web dashboard** and a **Mac app** — both are ve
 3. Run `xcodegen generate` in `apps/mac-client/`
 4. Update `CHANGELOG.md` with changes since last tag (based on `git log`)
 5. Commit: `chore: release v1.2.4`
-6. Push to trigger Cloudflare Workers Builds auto-deploy
+6. Push to trigger Vercel/Railway auto-deploy
 7. Tag: `git tag v1.2.4 && git push origin v1.2.4`
 8. GitHub Release: `gh release create v1.2.4 --title "v1.2.4" --notes-file -` (pipe CHANGELOG section)
 

@@ -2,5 +2,5 @@
 # https://google.github.io/osv-scanner/configuration/
 
 [[IgnoredVulns]]
-id = "GHSA-qx2v-qp2m-jg93"
-reason = "Transitive postcss 8.4.31 inside next 16.2.4's nested node_modules. Bun's overrides do not reach this nested install. The vulnerability is a regex DoS in postcss source-map parsing — only triggerable by maliciously crafted CSS input. Next.js uses postcss at build time on trusted source CSS, not on user input. The runtime Worker bundle does not include postcss. Top-level postcss in this project is pinned to ^8.5.12 (fixed) for any direct usage."
+id = "GHSA-5f7q-jpqc-wp7h"
+reason = "DoS vulnerability in Next.js PPR mode. This project does not use PPR (experimental.ppr) or cacheComponents, and does not set NEXT_PRIVATE_MINIMAL_MODE=1, so the vulnerability is not exploitable."

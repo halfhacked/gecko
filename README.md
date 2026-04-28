@@ -66,7 +66,7 @@ Gecko is a lightweight menu bar app that silently tracks which application and w
 | Xcode | 16.0+ | Mac client build |
 | [XcodeGen](https://github.com/yonaskolb/XcodeGen) | latest | Xcode project generation |
 | [SwiftLint](https://github.com/realm/SwiftLint) | latest | Swift linting |
-| [Bun](https://bun.sh) | latest | Web dashboard package manager (runs `next build`; production runs on Cloudflare Workers via `@opennextjs/cloudflare`) |
+| [Bun](https://bun.sh) | latest | Web dashboard runtime & package manager |
 
 ## 🚀 Getting Started
 
