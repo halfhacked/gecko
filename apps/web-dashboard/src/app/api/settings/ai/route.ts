@@ -5,7 +5,8 @@
 
 import { requireSession, jsonOk, jsonError } from "@/lib/api-helpers";
 import { settingsRepo } from "@/lib/settings-repo";
-import { isValidProvider, type AiProvider, type SdkType } from "@nocoo/next-ai";
+import type { AiProvider, SdkType } from "@nocoo/next-ai";
+import { isValidExtendedProvider } from "@/lib/ai-providers";
 
 export const dynamic = "force-dynamic";
 
@@ -68,7 +69,7 @@ export async function PUT(request: Request): Promise<Response> {
 
   // Validate provider if provided
   if (body.provider !== undefined && body.provider !== "") {
-    if (!isValidProvider(body.provider)) {
+    if (!isValidExtendedProvider(body.provider)) {
       return jsonError(`Invalid provider: ${body.provider}`, 400);
     }
   }
