@@ -8,3 +8,9 @@ reason = "DoS vulnerability in Next.js PPR mode. This project does not use PPR (
 [[IgnoredVulns]]
 id = "GHSA-qx2v-qp2m-jg93"
 reason = "Regex DoS in postcss <8.5.10 source-map parsing — only triggerable by maliciously crafted CSS input. Next.js uses postcss at build time on trusted source CSS, not user input. The runtime server bundle does not include postcss."
+
+[[PackageOverrides]]
+name = "@nocoo/next-ai"
+ecosystem = "npm"
+ignore = true
+reason = "Sourced from a GitHub fork (halfhacked/next-ai); bun.lock records a content hash that OSV.dev rejects as 'Invalid hash'. The fork tracks upstream nocoo/next-ai whose own dependencies are still scanned transitively."
