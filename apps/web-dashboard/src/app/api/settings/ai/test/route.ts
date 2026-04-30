@@ -11,7 +11,6 @@ import {
   createAiModel,
 } from "@nocoo/next-ai/server";
 import type { AiSettingsInput } from "@nocoo/next-ai";
-import { applyLocalProviderPresets } from "@/lib/ai-providers";
 import { generateText } from "ai";
 
 export const dynamic = "force-dynamic";
@@ -42,7 +41,7 @@ export async function POST(): Promise<Response> {
       sdkType: sdkType ? (sdkType as "anthropic" | "openai") : undefined,
     };
 
-    const config = resolveAiConfig(applyLocalProviderPresets(settings));
+    const config = resolveAiConfig(settings);
     const aiModel = createAiModel(config);
 
     const { text } = await generateText({

@@ -16,7 +16,6 @@ import {
   createAiModel,
 } from "@nocoo/next-ai/server";
 import type { AiSettingsInput } from "@nocoo/next-ai";
-import { applyLocalProviderPresets } from "@/lib/ai-providers";
 import { generateObject, NoObjectGeneratedError } from "ai";
 import { z } from "zod";
 import {
@@ -377,7 +376,7 @@ export async function runAnalysis(
       baseURL: settings.baseURL || undefined,
       sdkType: settings.sdkType ? (settings.sdkType as "anthropic" | "openai") : undefined,
     };
-    config = resolveAiConfig(applyLocalProviderPresets(input));
+    config = resolveAiConfig(input);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Invalid AI configuration";
     return { ok: false, reason: "no_ai_config", message: msg };
